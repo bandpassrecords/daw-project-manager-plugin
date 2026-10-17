@@ -1,0 +1,259 @@
+# Shown before every check on a PR ("CI / Unit tests on Linux"), so kept short.
+# Same shape as the app's release.yml: one workflow that tests every push and
+# PR on all three desktop platforms, builds testable installers for PRs, and
+# builds and uploads the release assets for a tag.
+name: CI
+
+# Needed to upload assets to the GitHub release of a tag.
+permissions:
+  contents: write
+
+on:
+  pull_request:
+    # 'release/**' as well as main, as in the app: a fix aimed at an already
+    # released version is opened against a release/vX.Y.Z branch cut from its tag.
+    branches: [ main, 'release/**' ]
+    types: [ opened, synchronize, reopened ]
+
+  push:
+    branches: [ main ]
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+
+env:
+  # Bump deliberately: https://github.com/Tracktion/pluginval/releases
+  PLUGINVAL_VERSION: v1.0.4
+
+  # JUCE's Linux build dependencies (https://github.com/juce-framework/JUCE/blob/master/docs/Linux%20Dependencies.md).
+  LINUX_DEPS: >-
+    libasound2-dev libjack-jackd2-dev libfreetype-dev libfontconfig1-dev
+    libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev
+    libxrandr-dev libxrender-dev libglu1-mesa-dev mesa-common-dev
+
+jobs:
+  # Unit tests — on PRs, pushes to main and tags, on all three desktop
+  # platforms. Every build job `needs:` this, so nothing is built, let alone
+  # released, until the whole suite has passed on Linux, Windows and macOS.
+  # Paths, file APIs and compilers differ between them; a test that only held
+  # on one went unnoticed in the app while its CI ran on Linux alone.
+  unit_tests:
+    name: Unit tests on ${{ matrix.os == 'windows-latest' && 'Windows' || matrix.os == 'macos-latest' && 'macOS' || 'Linux' }}
+    strategy:
+      # Let every platform finish: one failing says nothing about the others.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The newest changelog entry *is* the plugin's version (CMakeLists.txt
+      # reads it), so a tag that doesn't match it would ship a plugin that
+      # reports another version to every host. Add the entry before tagging:
+      #   python scripts/new_changelog_entry.py <version> --highlight "..."
+      # This gate reads a file, not the platform: checked once, on Linux.
+      - name: Verify changelog has an entry for the tag
+        if: startsWith(github.ref, 'refs/tags/v') && runner.os == 'Linux'
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          CHANGELOG_VERSION=$(python3 -c "import json;print(json.load(open('changelog/changelog.json'))['releases'][0]['version'])")
+          if [ "$TAG_VERSION" != "$CHANGELOG_VERSION" ]; then
+            echo "::error::Tag v${TAG_VERSION} does not match the newest entry in changelog/changelog.json (${CHANGELOG_VERSION}). Run: python scripts/new_changelog_entry.py ${TAG_VERSION} --highlight \"...\""
+            exit 1
+          fi
+          echo "Tag v${TAG_VERSION} matches changelog entry ${CHANGELOG_VERSION}"
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y $LINUX_DEPS
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build tests
+        run: cmake --build build --config Release --target DPMCompanionTests --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build -C Release --output-on-failure
+
+  # Builds, validates and packages the plugin. PRs upload the installers as
+  # workflow artifacts for testers; tags upload them to the GitHub release.
+  build:
+    name: Build ${{ matrix.label }}
+    needs: unit_tests
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'pull_request'
+    runs-on: ${{ matrix.os }}
+
+    # Apple signing/notarization secrets, hoisted to job level so that step
+    # `if:` conditions can read them through the env context: a step's own
+    # `env:` is not visible to that step's `if:` (the app learned this the
+    # hard way — its signing steps silently never ran). Same secret names as
+    # the app's release job, so one set of organisation secrets serves both.
+    env:
+      APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_DEVELOPER_ID: ${{ secrets.APPLE_DEVELOPER_ID }}
+      APPLE_INSTALLER_ID: ${{ secrets.APPLE_INSTALLER_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows installer (.exe)
+          - os: macos-latest
+            label: macOS installer (.pkg + .zip)
+          # The oldest supported runner, so the binary runs on older glibc.
+          - os: ubuntu-22.04
+            label: Linux (.tar.gz)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            REF_NAME="v${VERSION}"
+          else
+            VERSION=$(python3 -c "import json;print(json.load(open('changelog/changelog.json'))['releases'][0]['version'])")
+            REF_NAME="pr${{ github.event.pull_request.number }}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "ref_name=${REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y $LINUX_DEPS xvfb
+
+      - name: Configure
+        shell: bash
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DDPM_BUILD_TESTS=OFF -DDPM_VERSION=${{ steps.version.outputs.version }}
+
+      - name: Build VST3
+        run: cmake --build build --config Release --target DPMCompanion_VST3 --parallel
+
+      - name: Build AU (macOS)
+        if: runner.os == 'macOS'
+        run: cmake --build build --config Release --target DPMCompanion_AU --parallel
+
+      # pluginval at its strictest: open/close, editor, state save/restore,
+      # audio processing at many sample rates and block sizes, threading and
+      # fuzzing. DPM_BRIDGE_DIR keeps the run away from any real app library.
+      - name: Download pluginval
+        shell: bash
+        run: |
+          case "${{ runner.os }}" in
+            Windows) ASSET=pluginval_Windows.zip ;;
+            macOS)   ASSET=pluginval_macOS.zip ;;
+            *)       ASSET=pluginval_Linux.zip ;;
+          esac
+          curl -sSfL -o pluginval.zip "https://github.com/Tracktion/pluginval/releases/download/${PLUGINVAL_VERSION}/${ASSET}"
+          mkdir -p pluginval && unzip -q pluginval.zip -d pluginval
+
+      - name: Validate VST3 with pluginval
+        shell: bash
+        env:
+          DPM_BRIDGE_DIR: ${{ runner.temp }}/dpm-bridge
+        run: |
+          case "${{ runner.os }}" in
+            Windows) PV=pluginval/pluginval.exe ;;
+            macOS)   PV=pluginval/pluginval.app/Contents/MacOS/pluginval ;;
+            *)       PV="xvfb-run -a pluginval/pluginval" ;;
+          esac
+          $PV --strictness-level 10 --validate-in-process --timeout-ms 900000 \
+            --validate "build/DPMCompanion_artefacts/Release/VST3/DPM Companion.vst3"
+
+      - name: Validate AU with auval (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R "build/DPMCompanion_artefacts/Release/AU/DPM Companion.component" ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar || true
+          auval -v aufx Dpmc Bnpr
+
+      - name: Import signing certificate (macOS)
+        if: ${{ runner.os == 'macOS' && env.APPLE_CERTIFICATE_BASE64 != '' }}
+        run: |
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security list-keychains -s build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 -d > certificate.p12
+          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/productsign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          rm certificate.p12
+
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: bash packaging/macos/build_pkg.sh "${{ steps.version.outputs.version }}" dist
+
+      - name: Clean up keychain (macOS)
+        if: ${{ always() && runner.os == 'macOS' && env.APPLE_CERTIFICATE_BASE64 != '' }}
+        run: security delete-keychain build.keychain || true
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          choco install innosetup --no-progress -y
+          iscc packaging/windows/installer.iss
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Move-Item Output/DPM_Companion_Installer_v$env:APP_VERSION.exe dist/
+          $zip = "dist/DPM_Companion_Windows_VST3_v$env:APP_VERSION.zip"
+          Compress-Archive -Path "build/DPMCompanion_artefacts/Release/VST3/DPM Companion.vst3" -DestinationPath $zip
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: bash packaging/linux/package.sh "${{ steps.version.outputs.version }}" dist
+
+      # One .sha256 per asset, as the app's releases have, so users can verify
+      # their download.
+      - name: Generate SHA256 checksums
+        shell: bash
+        run: |
+          cd dist
+          for f in *; do
+            case "$f" in *.sha256) continue ;; esac
+            if command -v sha256sum >/dev/null 2>&1; then
+              sum=$(sha256sum "$f" | awk '{print $1}')
+            else
+              sum=$(shasum -a 256 "$f" | awk '{print $1}')
+            fi
+            echo "${sum}  ${f}" > "${f}.sha256"
+          done
+          ls -la
+
+      # The release must already exist: it is created by `gh release create`,
+      # which creates the tag and so starts this run (see the release skill).
+      - name: Upload to the GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          if ! gh release view "$TAG" -R "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::error::Release $TAG not found. Create the release with 'gh release create' (which creates the tag) instead of pushing a bare tag."
+            exit 1
+          fi
+          gh release upload "$TAG" dist/* -R "$GITHUB_REPOSITORY" --clobber
+
+      - name: Upload artifact (PR)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: DPM_Companion_${{ runner.os }}_${{ steps.version.outputs.ref_name }}
+          path: dist/
+          retention-days: 7

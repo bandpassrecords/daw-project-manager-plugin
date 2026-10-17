@@ -1,0 +1,8 @@
+* text=auto
+
+# Run on macOS/Linux runners: a CRLF here breaks the shebang.
+*.sh text eol=lf
+packaging/macos/scripts/* text eol=lf
+
+# Read by the plugin and compared byte for byte in tests.
+resources/translations/*.txt text eol=lf

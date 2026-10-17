@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# Builds the macOS installer and zip from a Release build.
+#
+#   packaging/macos/build_pkg.sh <version> <output-dir>
+#
+# Signs and notarizes when the Apple secrets are in the environment (the same
+# names and the same Developer ID certificate the app's release job uses; see
+# .github/REQUIRED_SECRETS.md). Without them the bundles are ad-hoc signed —
+# enough for Apple Silicon to load them, though Gatekeeper will warn.
+set -euo pipefail
+
+VERSION="$1"
+OUT="$2"
+ARTEFACTS="build/DPMCompanion_artefacts/Release"
+VST3="$ARTEFACTS/VST3/DPM Companion.vst3"
+AU="$ARTEFACTS/AU/DPM Companion.component"
+IDENTIFIER="com.bandpassrecords.dpm.companion"
+
+mkdir -p "$OUT"
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
+sign_bundle() {
+  local bundle="$1"
+  if [ -n "${APPLE_DEVELOPER_ID:-}" ]; then
+    codesign --force --deep --timestamp --options runtime --sign "$APPLE_DEVELOPER_ID" "$bundle"
+  else
+    codesign --force --deep --sign - "$bundle"
+  fi
+  codesign --verify --strict --verbose=2 "$bundle"
+}
+
+can_notarize() {
+  [ -n "${APPLE_DEVELOPER_ID:-}" ] && [ -n "${APPLE_ID:-}" ] \
+    && [ -n "${APPLE_APP_SPECIFIC_PASSWORD:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ]
+}
+
+notarize() {
+  xcrun notarytool submit "$1" --apple-id "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+    --team-id "$APPLE_TEAM_ID" --wait --timeout 30m
+}
+
+# --- Bundles -------------------------------------------------------------------
+STAGE="$WORK/root/Library/Audio/Plug-Ins"
+mkdir -p "$STAGE/VST3" "$STAGE/Components"
+ditto "$VST3" "$STAGE/VST3/DPM Companion.vst3"
+ditto "$AU" "$STAGE/Components/DPM Companion.component"
+
+sign_bundle "$STAGE/VST3/DPM Companion.vst3"
+sign_bundle "$STAGE/Components/DPM Companion.component"
+
+if can_notarize; then
+  # Notarize the bundles themselves too, so the zip's copies are stapled.
+  ditto -c -k --keepParent "$STAGE/VST3/DPM Companion.vst3" "$WORK/vst3.zip"
+  ditto -c -k --keepParent "$STAGE/Components/DPM Companion.component" "$WORK/au.zip"
+  notarize "$WORK/vst3.zip"
+  notarize "$WORK/au.zip"
+  xcrun stapler staple "$STAGE/VST3/DPM Companion.vst3"
+  xcrun stapler staple "$STAGE/Components/DPM Companion.component"
+fi
+
+# --- Zip (drag-and-drop install) -------------------------------------------------
+ZIPDIR="$WORK/zip/DPM Companion $VERSION"
+mkdir -p "$ZIPDIR"
+ditto "$STAGE/VST3/DPM Companion.vst3" "$ZIPDIR/DPM Companion.vst3"
+ditto "$STAGE/Components/DPM Companion.component" "$ZIPDIR/DPM Companion.component"
+cp packaging/macos/INSTALL.txt "$ZIPDIR/INSTALL.txt"
+(cd "$WORK/zip" && ditto -c -k --keepParent "DPM Companion $VERSION" "DPM_Companion_macOS_v$VERSION.zip")
+mv "$WORK/zip/DPM_Companion_macOS_v$VERSION.zip" "$OUT/"
+
+# --- Installer package -----------------------------------------------------------
+# Plug-in bundles must not be "relocated" to wherever the installer finds an
+# older copy with the same bundle id (a dev build in ~/Library, say).
+pkgbuild --analyze --root "$WORK/root" "$WORK/components.plist"
+count=$(/usr/libexec/PlistBuddy -c "Print" "$WORK/components.plist" | grep -c "BundleIsRelocatable" || true)
+for ((i = 0; i < count; i++)); do
+  /usr/libexec/PlistBuddy -c "Set :$i:BundleIsRelocatable false" "$WORK/components.plist"
+done
+
+pkgbuild --root "$WORK/root" --install-location / --component-plist "$WORK/components.plist" \
+  --identifier "$IDENTIFIER" --version "$VERSION" --scripts packaging/macos/scripts \
+  "$WORK/component.pkg"
+
+PKG="$OUT/DPM_Companion_macOS_Installer_v$VERSION.pkg"
+productbuild --package "$WORK/component.pkg" "$WORK/unsigned.pkg"
+
+if [ -n "${APPLE_INSTALLER_ID:-}" ]; then
+  productsign --timestamp --sign "$APPLE_INSTALLER_ID" "$WORK/unsigned.pkg" "$PKG"
+  if can_notarize; then
+    notarize "$PKG"
+    xcrun stapler staple "$PKG"
+  fi
+else
+  mv "$WORK/unsigned.pkg" "$PKG"
+fi
+
+echo "Built:"
+ls -la "$OUT"

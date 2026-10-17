@@ -1,0 +1,28 @@
+{
+  "_comment": [
+    "The companion plugin's changelog, in the same shape as the app's",
+    "assets/changelog/changelog.json. Its newest entry is the plugin's version:",
+    "CMakeLists.txt reads it, and CI fails a release tag that doesn't match it.",
+    "",
+    "Newest release FIRST. Every entry needs a `version` (bare semver, no",
+    "leading v), a `date` (YYYY-MM-DD) and a `highlights` map of locale -> list",
+    "of one-line strings. `en` is required; other locales are optional.",
+    "",
+    "Add the entry for a release BEFORE tagging it:",
+    "  python scripts/new_changelog_entry.py 0.2.0 --highlight \"...\""
+  ],
+  "releases": [
+    {
+      "version": "0.1.0",
+      "date": "2026-10-18",
+      "highlights": {
+        "en": [
+          "First release: a VST3 (and AU on macOS) plugin that pairs a DAW session with its project in DAW Project Manager.",
+          "Pre-listen capture: put it on the master bus and each playback pass is recorded as the project's preview song, without bouncing.",
+          "To-dos: see the project's to-dos while you work, tick them off and add new ones, optionally stamped with the playhead time.",
+          "Finds the project on its own from the DAW's window title or the app's launch, with a search to pick it by hand."
+        ]
+      }
+    }
+  ]
+}

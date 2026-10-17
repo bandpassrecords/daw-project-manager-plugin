@@ -1,0 +1,125 @@
+#include "PluginProcessor.h"
+
+#include "Translations.h"
+#include "ui/PluginEditor.h"
+
+namespace dpm
+{
+
+juce::File CompanionProcessor::takeFolder()
+{
+    // Takes are written outside the bridge folder and moved in only when
+    // kept, so the app never sees one being recorded.
+    return juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("DPM Companion");
+}
+
+CompanionProcessor::CompanionProcessor()
+    : AudioProcessor (BusesProperties()
+                          .withInput ("Input", juce::AudioChannelSet::stereo(), true)
+                          .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+      client (std::make_unique<BridgeClient> (BridgeFolder::forThisMachine())),
+      clientRef (client.get()),
+      engine (takeFolder(), juce::Uuid().toString(), [weak = clientRef] (const FinishedTakeFile& take)
+      {
+          // Writer thread: hand over to the message thread.
+          juce::MessageManager::callAsync ([weak, take]
+          {
+              if (auto* c = weak.get())
+                  c->takeFinished (take);
+              else
+                  take.file.deleteFile();
+          });
+      })
+{
+    installTranslations();
+    applyCaptureSettings();
+}
+
+CompanionProcessor::~CompanionProcessor()
+{
+    engine.release();
+}
+
+void CompanionProcessor::applyCaptureSettings()
+{
+    const auto settings = client->withSession ([] (CompanionSession& s) { return s.state().capture; });
+    engine.setMode (settings.mode);
+    engine.setMaxSeconds (settings.maxSeconds);
+}
+
+void CompanionProcessor::prepareToPlay (double sampleRate, int)
+{
+    engine.prepare (sampleRate, getTotalNumInputChannels());
+}
+
+void CompanionProcessor::releaseResources()
+{
+    engine.release();
+}
+
+bool CompanionProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+{
+    const auto& out = layouts.getMainOutputChannelSet();
+    if (out != juce::AudioChannelSet::mono() && out != juce::AudioChannelSet::stereo())
+        return false;
+    return out == layouts.getMainInputChannelSet();
+}
+
+void CompanionProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+{
+    juce::ScopedNoDenormals noDenormals;
+
+    // Pass-through: the input is the output. Only channels the host gave us
+    // no input for are cleared.
+    for (auto ch = getTotalNumInputChannels(); ch < getTotalNumOutputChannels(); ++ch)
+        buffer.clear (ch, 0, buffer.getNumSamples());
+
+    TransportState transport;
+    transport.isRealtime = ! isNonRealtime();
+
+    if (auto* head = getPlayHead())
+    {
+        if (auto position = head->getPosition())
+        {
+            transport.isPlaying = position->getIsPlaying();
+            transport.isLooping = position->getIsLooping();
+            if (auto seconds = position->getTimeInSeconds())
+                playhead.store (*seconds);
+        }
+    }
+
+    engine.process (buffer, transport);
+}
+
+std::optional<double> CompanionProcessor::playheadSeconds() const
+{
+    const auto p = playhead.load();
+    return p >= 0 ? std::optional (p) : std::nullopt;
+}
+
+juce::AudioProcessorEditor* CompanionProcessor::createEditor()
+{
+    return new CompanionEditor (*this);
+}
+
+void CompanionProcessor::getStateInformation (juce::MemoryBlock& destData)
+{
+    if (auto xml = client->saveState().createXml())
+        copyXmlToBinary (*xml, destData);
+}
+
+void CompanionProcessor::setStateInformation (const void* data, int sizeInBytes)
+{
+    if (auto xml = getXmlFromBinary (data, sizeInBytes))
+    {
+        client->restoreState (juce::ValueTree::fromXml (*xml));
+        applyCaptureSettings();
+    }
+}
+
+} // namespace dpm
+
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
+{
+    return new dpm::CompanionProcessor();
+}

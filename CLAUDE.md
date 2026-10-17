@@ -1,0 +1,138 @@
+# CLAUDE.md — DPM Companion
+
+Instructions for AI assistants working on this codebase: the VST3/AU
+companion plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-manager)
+(issue #118). C++20, JUCE 9, CMake.
+
+---
+
+## Non-negotiables
+
+### Tests are part of every task
+- Every bug fix includes a regression test that would have caught it. Every
+  new feature includes tests covering its logic in full.
+- Run the whole suite before every commit; commit only when it passes:
+  ```
+  cmake --build build --config Debug --target DPMCompanionTests
+  ctest --test-dir build -C Debug --output-on-failure
+  ```
+- CI runs the suite on Linux, Windows and macOS (`unit_tests` in
+  `release.yml`), and every build waits for all three. Tests must hold on each:
+  a juce::File can only hold a path native to the OS it runs on, so code that
+  decides paths for another OS works on strings (`BridgePaths`).
+- Logic goes in `src/core/`, which has no GUI, host or timer and is compiled
+  into the tests. What is left in `src/plugin/` and `src/ui/` is glue: keep it
+  thin enough not to need tests, and say so when something can't be automated.
+
+### The protocol is a contract with the app
+- `docs/PROTOCOL.md` is the contract; `BridgeProtocol`, `ProjectIndex`,
+  `CompanionSession` and `Outbox` implement this side of it. Change them
+  together, in the same commit, and the app side with them.
+- Projects are matched by **profile and id, never id alone** — the app's rule
+  (one id can sit in two profiles).
+- The plugin never edits or deletes to-dos, never writes the app's files, and
+  only ever deletes a capture it wrote itself and has since superseded.
+- Add fields freely (both sides ignore unknown ones); a breaking change gets a
+  new file name, not a new schema number.
+
+### Never block the audio thread
+- `processBlock` → `CaptureEngine::process` → `CapturePolicy::process`: no
+  allocation, no locks, no file I/O, no logging. Samples cross to the writer
+  thread through a lock-free FIFO. Use `prepareToWrite`/`finishedWrite`, never
+  `AbstractFifo::write()`, whose scope object commits a short write of samples
+  never copied.
+- Audio passes through untouched. The test "The engine never changes the audio
+  passing through" guards it.
+
+### Always translate UI strings
+- Every user-visible string goes through `TRANS("…")`, in English.
+- The plugin ships in the app's nine languages: add the string to every file in
+  `resources/translations/`. `LocalisationTests` fails on a missing or unused
+  key and on a lost `{placeholder}`.
+- `pt.txt` is **Brazilian Portuguese**, as in the app: "arquivo", "baixar",
+  "tela", "usuário", "está gravando" — never "ficheiro", "descarregar", "ecrã",
+  "utilizador", "está a gravar".
+- Use the app's vocabulary for the same things (to-do = Aufgabe, tarea, tâche,
+  attività, タスク, tarefa, задача, 待办事项).
+
+### New state fields
+- `CompanionState` is saved in the DAW project (`getStateInformation`). A new
+  field gets a default for older projects in `fromValueTree` and a round-trip
+  check in `CompanionStateTests`.
+- Ask per field whether it belongs in the DAW project at all: a device-local
+  preference doesn't (there are none yet).
+
+---
+
+## How it fits together
+
+- `BridgeClient` (message thread, 2 s timer) drives one `CompanionSession`
+  per instance: re-read `index.json`/`launch.json` when they change, read the
+  host's window title, auto-link, deliver the outbox.
+- Linking: `rankProjects` scores the window title (path > file name > name as
+  a whole word, longer names first) and the app's launch hint; `confidentMatch`
+  links only on a clear winner. A manual link (`linkedByUser`) is never changed
+  automatically — the UI offers `relinkSuggestion` instead.
+- To-dos: changes are `PendingTodoOp`s in the saved state until the index
+  acknowledges them (`pruneAcknowledged`); `buildTodoList` lays them over the
+  app's list. Undelivered ops are never dropped.
+- Captures: `CapturePolicy` decides takes on the audio thread; `CaptureEngine`
+  writes them as FLAC on its own thread into the temp folder; the session
+  judges them (`judgeTake`) and moves keepers into `captures/`.
+- Stamped to-dos use the app's own format, `[MM:SS] text`
+  (`playback_todo_utils.dart`). Keep them identical.
+- UI colours are the app's Classic Dark (`palette` in `CompanionLookAndFeel.h`).
+
+---
+
+## Common tasks
+
+### Building
+```
+cmake -S . -B build                         # downloads JUCE 9.0.4 and Catch2
+cmake --build build --config Release --target DPMCompanion_VST3
+cmake -S . -B build -DDPM_BUILD_STANDALONE=ON   # a Standalone, to look at the UI
+```
+Pass `-DFETCHCONTENT_SOURCE_DIR_JUCE=<checkout>` to build against a local JUCE.
+Set `DPM_BRIDGE_DIR` to a scratch folder when running the plugin or pluginval,
+so nothing touches your real app library.
+
+### Validating
+```
+pluginval --strictness-level 10 --validate-in-process --validate "build/DPMCompanion_artefacts/Release/VST3/DPM Companion.vst3"
+```
+CI runs this on every platform, plus `auval` on macOS.
+
+### Cutting a release
+- The newest entry in `changelog/changelog.json` **is** the version; CMake
+  reads it and CI fails a tag that doesn't match. Add it first:
+  `python scripts/new_changelog_entry.py 0.2.0 --highlight "..."`.
+- Then follow `.claude/skills/release/SKILL.md`: publish with
+  `gh release create` (which creates the tag), never push a bare tag.
+
+### Adding a UI string
+1. `TRANS ("English text")` in the code.
+2. The same key in every `resources/translations/*.txt`.
+3. Run the tests.
+
+---
+
+## Key file locations
+
+| What | Where |
+|------|-------|
+| The contract with the app | `docs/PROTOCOL.md` |
+| Where the bridge folder is, per OS | `src/core/BridgePaths.*` |
+| Message format, ISO times | `src/core/BridgeProtocol.*` |
+| `index.json` / `launch.json` | `src/core/ProjectIndex.*` |
+| Which project is open | `src/core/ProjectMatcher.*` |
+| Everything one instance does with the bridge | `src/core/CompanionSession.*` |
+| Saved state | `src/core/CompanionState.*` |
+| To-do merging and acknowledgement | `src/core/TodoBook.*` |
+| Capture decisions / threading / FLAC | `src/core/CapturePolicy.*`, `CaptureEngine.*`, `CaptureWriter.*` |
+| Host window title (Windows, macOS) | `src/platform/HostWindowTitle*` |
+| Processor, timer glue | `src/plugin/` |
+| Editor, picker, to-do list, look | `src/ui/` |
+| Translations | `resources/translations/` |
+| Installers | `packaging/` |
+| CI and release | `.github/workflows/release.yml` |

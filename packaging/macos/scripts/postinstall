@@ -1,0 +1,5 @@
+#!/bin/sh
+# Make hosts see the new Audio Unit without a restart: the registrar caches
+# the component list and rebuilds it when it is next started.
+killall -9 AudioComponentRegistrar >/dev/null 2>&1 || true
+exit 0

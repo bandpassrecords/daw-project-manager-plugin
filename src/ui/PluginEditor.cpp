@@ -1,0 +1,494 @@
+#include "PluginEditor.h"
+
+namespace dpm
+{
+
+// --- LevelMeter ----------------------------------------------------------------
+
+void LevelMeter::push (float peak)
+{
+    const auto db = juce::Decibels::gainToDecibels (peak, -60.0f);
+    const auto target = juce::jmap (db, -60.0f, 0.0f, 0.0f, 1.0f);
+    // Rises at once, falls gently.
+    level = target > level ? target : juce::jmax (target, level - 0.04f);
+    repaint();
+}
+
+void LevelMeter::setRecording (bool isRecording)
+{
+    if (recording != isRecording)
+    {
+        recording = isRecording;
+        repaint();
+    }
+}
+
+void LevelMeter::paint (juce::Graphics& g)
+{
+    const auto bounds = getLocalBounds().toFloat();
+    g.setColour (palette::background);
+    g.fillRoundedRectangle (bounds, bounds.getHeight() * 0.5f);
+
+    const auto fill = bounds.withWidth (bounds.getWidth() * juce::jlimit (0.0f, 1.0f, level));
+    g.setColour (recording ? palette::recording : palette::primary.brighter (0.5f));
+    g.fillRoundedRectangle (fill, bounds.getHeight() * 0.5f);
+}
+
+// --- CompanionEditor -------------------------------------------------------------
+
+namespace
+{
+    void style (juce::Label& label, float size, juce::Colour colour, bool bold = false)
+    {
+        label.setFont (juce::FontOptions (size, bold ? juce::Font::bold : juce::Font::plain));
+        label.setColour (juce::Label::textColourId, colour);
+        label.setMinimumHorizontalScale (1.0f);
+    }
+
+    void heading (juce::Label& label, const juce::String& text)
+    {
+        label.setText (text.toUpperCase(), juce::dontSendNotification);
+        style (label, 12.0f, palette::textTertiary, true);
+    }
+
+    juce::String lengthText (int seconds)
+    {
+        if (seconds < 60)
+            return TRANS ("{n} s").replace ("{n}", juce::String (seconds));
+        return TRANS ("{n} min").replace ("{n}", juce::String (seconds / 60));
+    }
+
+    constexpr int modeAutomatic = 1, modeManual = 2, modeOff = 3;
+}
+
+CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor (p), processor (p)
+{
+    setLookAndFeel (&lookAndFeel);
+
+    title.setText ("DAW Project Manager", juce::dontSendNotification);
+    style (title, 18.0f, palette::text, true);
+    subtitle.setText ("Companion", juce::dontSendNotification);
+    style (subtitle, 13.0f, palette::textTertiary);
+    style (appStatus, 12.0f, palette::textSecondary);
+    appStatus.setJustificationType (juce::Justification::centredRight);
+    for (auto* c : { &title, &subtitle, &appStatus })
+        addAndMakeVisible (c);
+
+    // Project
+    heading (projectHeading, TRANS ("Project"));
+    style (projectName, 17.0f, palette::text, true);
+    style (projectPath, 12.0f, palette::textTertiary);
+    style (relinkHint, 13.0f, palette::warning);
+    projectPath.setMinimumHorizontalScale (0.6f);
+    changeProjectButton.setButtonText (TRANS ("Change..."));
+    changeProjectButton.onClick = [this] { showPicker (true); };
+    relinkButton.setButtonText (TRANS ("Link"));
+    relinkButton.onClick = [this]
+    {
+        processor.bridge().withSession ([this] (CompanionSession& s)
+        {
+            if (auto* target = s.index() != nullptr ? s.index()->find (relinkTarget) : nullptr)
+                s.linkTo (*target, true);
+        });
+        processor.bridge().changed();
+    };
+    for (auto* c : std::initializer_list<juce::Component*> { &projectHeading, &projectName, &projectPath,
+                                                            &relinkHint, &changeProjectButton, &relinkButton })
+        addAndMakeVisible (c);
+
+    // Capture
+    heading (captureHeading, TRANS ("Pre-listen capture"));
+    modeLabel.setText (TRANS ("Mode"), juce::dontSendNotification);
+    lengthLabel.setText (TRANS ("Length"), juce::dontSendNotification);
+    style (modeLabel, 13.0f, palette::textSecondary);
+    style (lengthLabel, 13.0f, palette::textSecondary);
+    style (captureStatus, 13.0f, palette::textSecondary);
+
+    modeBox.addItem (TRANS ("Automatic"), modeAutomatic);
+    modeBox.addItem (TRANS ("Manual"), modeManual);
+    modeBox.addItem (TRANS ("Off"), modeOff);
+    modeBox.onChange = [this]
+    {
+        const auto mode = modeBox.getSelectedId() == modeManual ? CaptureMode::manual
+                        : modeBox.getSelectedId() == modeOff    ? CaptureMode::off
+                                                                : CaptureMode::automatic;
+        processor.bridge().withSession ([mode] (CompanionSession& s) { s.setCaptureMode (mode); });
+        processor.applyCaptureSettings();
+        refreshCaptureStatus();
+    };
+
+    for (auto seconds : CaptureSettings::lengthChoices())
+        lengthBox.addItem (lengthText (seconds), seconds);
+    lengthBox.onChange = [this]
+    {
+        const auto seconds = lengthBox.getSelectedId();
+        processor.bridge().withSession ([seconds] (CompanionSession& s) { s.setCaptureMaxSeconds (seconds); });
+        processor.applyCaptureSettings();
+    };
+
+    recordButton.setClickingTogglesState (false);
+    recordButton.onClick = [this]
+    {
+        auto& engine = processor.capture();
+        if (engine.isManualTake())
+            engine.pressStop();
+        else
+            engine.pressRecord();
+    };
+
+    for (auto* c : std::initializer_list<juce::Component*> { &captureHeading, &modeLabel, &lengthLabel, &modeBox,
+                                                            &lengthBox, &recordButton, &meter, &captureStatus })
+        addAndMakeVisible (c);
+
+    // To-dos
+    heading (todoHeading, TRANS ("To-dos"));
+    todoList.onToggle = [this] (const juce::String& todoId, bool completed)
+    {
+        processor.bridge().withSession ([&] (CompanionSession& s) { s.setTodoCompleted (todoId, completed); });
+        processor.bridge().changed();
+    };
+    todoInput.setTextToShowWhenEmpty (TRANS ("Add a to-do..."), palette::textTertiary);
+    todoInput.setIndents (10, 7);
+    todoInput.setInputRestrictions (maxTodoLength);
+    todoInput.onReturnKey = [this] { addTodo(); };
+    addTodoButton.setButtonText (TRANS ("Add"));
+    addTodoButton.onClick = [this] { addTodo(); };
+    stampToggle.setButtonText (TRANS ("Stamp with playhead time"));
+    stampToggle.onClick = [this]
+    {
+        const auto on = stampToggle.getToggleState();
+        processor.bridge().withSession ([on] (CompanionSession& s) { s.setStampTodosWithTime (on); });
+    };
+    for (auto* c : std::initializer_list<juce::Component*> { &todoHeading, &todoList, &todoInput, &addTodoButton,
+                                                            &stampToggle })
+        addAndMakeVisible (c);
+
+    style (footer, 11.0f, palette::textTertiary);
+    addAndMakeVisible (footer);
+
+    picker.rowsFor = [this] (const juce::String& query)
+    {
+        return processor.bridge().withSession ([&query] (CompanionSession& s)
+        {
+            return s.index() != nullptr ? buildPickerRows (*s.index(), s.suggestions(), query)
+                                        : std::vector<PickerRow> {};
+        });
+    };
+    picker.onPick = [this] (const protocol::ProjectRef& ref)
+    {
+        processor.bridge().withSession ([&ref] (CompanionSession& s)
+        {
+            if (auto* project = s.index() != nullptr ? s.index()->find (ref) : nullptr)
+                s.linkTo (*project, true);
+        });
+        showPicker (false);
+        processor.bridge().changed();
+    };
+    picker.onUnlink = [this]
+    {
+        processor.bridge().withSession ([] (CompanionSession& s) { s.unlink(); });
+        showPicker (false);
+        processor.bridge().changed();
+    };
+    picker.onClose = [this] { showPicker (false); };
+    addChildComponent (picker);
+
+    processor.bridge().addChangeListener (this);
+
+    setResizable (true, true);
+    setResizeLimits (420, 520, 1000, 1200);
+    setSize (480, 620);
+
+    refreshFromSession();
+    startTimerHz (20);
+}
+
+CompanionEditor::~CompanionEditor()
+{
+    processor.bridge().removeChangeListener (this);
+    setLookAndFeel (nullptr);
+}
+
+void CompanionEditor::changeListenerCallback (juce::ChangeBroadcaster*)
+{
+    refreshFromSession();
+}
+
+void CompanionEditor::refreshFromSession()
+{
+    struct Snapshot
+    {
+        bool hasIndex = false;
+        bool linked = false;
+        protocol::ProjectRef project;
+        juce::String profileName;
+        juce::String relinkName;
+        protocol::ProjectRef relinkRef;
+        std::vector<TodoView> todos;
+        CompanionState state;
+        int undelivered = 0;
+    };
+
+    const auto snap = processor.bridge().withSession ([] (CompanionSession& s)
+    {
+        Snapshot out;
+        out.hasIndex = s.index() != nullptr;
+        out.state = s.state();
+        out.project = s.state().project;
+        out.linked = out.project.isLinked();
+        if (auto* linked = s.linkedProject())
+            out.profileName = linked->profileName;
+        if (auto* relink = s.relinkSuggestion())
+        {
+            out.relinkName = relink->name;
+            out.relinkRef = relink->ref();
+        }
+        out.todos = s.todos();
+        out.undelivered = s.undeliveredCount();
+        return out;
+    });
+
+    appConnected = snap.hasIndex;
+    appStatus.setText (appConnected ? TRANS ("App connected") : TRANS ("App not found"), juce::dontSendNotification);
+
+    if (snap.linked)
+    {
+        projectName.setText (snap.project.name, juce::dontSendNotification);
+        juce::String path = snap.project.filePath;
+        if (snap.profileName.isNotEmpty())
+            path = snap.profileName + "  ·  " + path;
+        projectPath.setText (path, juce::dontSendNotification);
+        projectPath.setTooltip (snap.project.filePath);
+    }
+    else
+    {
+        projectName.setText (TRANS ("Not linked to a project"), juce::dontSendNotification);
+        projectPath.setText (TRANS ("Pick the project this DAW session belongs to, so captures and to-dos reach it."),
+                             juce::dontSendNotification);
+        projectPath.setTooltip ({});
+    }
+
+    relinkTarget = snap.relinkRef;
+    relinkHint.setText (snap.relinkName.isEmpty() ? juce::String()
+                                                  : TRANS ("This looks like {name}.").replace ("{name}", snap.relinkName),
+                        juce::dontSendNotification);
+    relinkHint.setVisible (snap.relinkName.isNotEmpty());
+    relinkButton.setVisible (snap.relinkName.isNotEmpty());
+
+    modeBox.setSelectedId (snap.state.capture.mode == CaptureMode::manual ? modeManual
+                           : snap.state.capture.mode == CaptureMode::off  ? modeOff
+                                                                          : modeAutomatic,
+                           juce::dontSendNotification);
+    lengthBox.setSelectedId (snap.state.capture.maxSeconds, juce::dontSendNotification);
+    stampToggle.setToggleState (snap.state.stampTodosWithTime, juce::dontSendNotification);
+
+    todoList.setTodos (snap.todos);
+    todoList.setEmptyText (snap.linked ? TRANS ("No to-dos yet.") : TRANS ("Link a project to see its to-dos."));
+    todoInput.setEnabled (snap.linked);
+    addTodoButton.setEnabled (snap.linked);
+    stampToggle.setEnabled (snap.linked);
+
+    juce::String footerText = "v" DPM_VERSION_STRING;
+    if (snap.undelivered == 1)
+        footerText << "  ·  " << TRANS ("1 change waiting for the app");
+    else if (snap.undelivered > 1)
+        footerText << "  ·  " << TRANS ("{n} changes waiting for the app").replace ("{n}", juce::String (snap.undelivered));
+    footer.setText (footerText, juce::dontSendNotification);
+
+    if (picker.isVisible())
+        picker.refresh (snap.hasIndex, snap.linked);
+
+    refreshCaptureStatus();
+    resized();
+    repaint();
+}
+
+void CompanionEditor::refreshCaptureStatus()
+{
+    auto& engine = processor.capture();
+    const auto settings = processor.bridge().withSession ([] (CompanionSession& s) { return s.state(); });
+    const auto& mode = settings.capture.mode;
+    const auto recording = engine.isRecording();
+
+    recordButton.setEnabled (mode == CaptureMode::manual);
+    recordButton.setButtonText (engine.isManualTake() ? TRANS ("Stop") : TRANS ("Record"));
+    recordButton.setToggleState (engine.isManualTake(), juce::dontSendNotification);
+    lengthBox.setEnabled (mode != CaptureMode::off);
+    meter.setRecording (recording);
+
+    juce::String status;
+    auto colour = palette::textSecondary;
+
+    if (recording)
+    {
+        status = TRANS ("Recording {time} of {max}")
+                     .replace ("{time}", formatClock (engine.recordedSeconds()))
+                     .replace ("{max}", formatClock (settings.capture.maxSeconds));
+        colour = palette::recording.brighter (0.3f);
+    }
+    else
+    {
+        const auto report = processor.bridge().lastTake();
+
+        if (report.any && report.verdict != TakeVerdict::keep)
+        {
+            switch (report.verdict)
+            {
+                case TakeVerdict::discardTooShort:   status = TRANS ("Last pass not kept: too short"); break;
+                case TakeVerdict::discardNotBetter:  status = TRANS ("Last pass not kept: shorter than the current capture"); break;
+                case TakeVerdict::discardEnded:      status = TRANS ("Last pass not kept: looped or rendered offline"); break;
+                case TakeVerdict::discardSilent:     status = TRANS ("Last pass not kept: silent"); break;
+                case TakeVerdict::discardIncomplete: status = TRANS ("Last pass not kept: audio was lost"); break;
+                case TakeVerdict::keep:              break;
+            }
+        }
+        else if (settings.lastCapture.exists())
+        {
+            status = TRANS ("Last capture: {time} ({length})")
+                         .replace ("{time}", settings.lastCapture.capturedAt.toString (true, true, false, true))
+                         .replace ("{length}", formatClock (settings.lastCapture.seconds));
+        }
+        else
+        {
+            status = mode == CaptureMode::automatic ? TRANS ("Captures each playback pass, up to the chosen length.")
+                   : mode == CaptureMode::manual    ? TRANS ("Press Record to capture what plays.")
+                                                    : TRANS ("Capture is off.");
+        }
+    }
+
+    captureStatus.setText (status, juce::dontSendNotification);
+    captureStatus.setColour (juce::Label::textColourId, colour);
+}
+
+void CompanionEditor::timerCallback()
+{
+    meter.push (processor.capture().takeMeterPeak());
+    refreshCaptureStatus();
+}
+
+void CompanionEditor::showPicker (bool show)
+{
+    if (show)
+    {
+        const auto state = processor.bridge().withSession ([] (CompanionSession& s)
+        {
+            return std::pair { s.index() != nullptr, s.state().project.isLinked() };
+        });
+        picker.setVisible (true);
+        picker.refresh (state.first, state.second);
+        picker.toFront (true);
+    }
+    else
+    {
+        picker.setVisible (false);
+    }
+}
+
+void CompanionEditor::addTodo()
+{
+    const auto text = todoInput.getText();
+    const auto playhead = processor.playheadSeconds();
+    const auto added = processor.bridge().withSession ([&] (CompanionSession& s) { return s.addTodo (text, playhead); });
+
+    if (added)
+    {
+        todoInput.clear();
+        processor.bridge().changed();
+    }
+}
+
+void CompanionEditor::paint (juce::Graphics& g)
+{
+    g.fillAll (palette::background);
+    drawCard (g, projectCard);
+    drawCard (g, captureCard);
+    drawCard (g, todoCard);
+
+    // The connection dot left of the status text.
+    const auto textWidth = juce::GlyphArrangement::getStringWidth (appStatus.getFont(), appStatus.getText());
+    const auto dotX = (float) appStatus.getRight() - textWidth - 18.0f;
+    g.setColour (appConnected ? palette::connected : palette::warning);
+    g.fillEllipse (dotX, (float) appStatus.getBounds().getCentreY() - 4.0f, 8.0f, 8.0f);
+}
+
+void CompanionEditor::resized()
+{
+    auto area = getLocalBounds().reduced (16);
+
+    auto header = area.removeFromTop (30);
+    const auto statusWidth = (int) juce::GlyphArrangement::getStringWidth (appStatus.getFont(), appStatus.getText()) + 30;
+    appStatus.setBounds (header.removeFromRight (statusWidth));
+    const auto titleWidth = (int) juce::GlyphArrangement::getStringWidth (title.getFont(), title.getText()) + 12;
+    title.setBounds (header.removeFromLeft (juce::jmin (header.getWidth(), titleWidth)));
+    subtitle.setBounds (header);
+    area.removeFromTop (10);
+
+    footer.setBounds (area.removeFromBottom (16));
+    area.removeFromBottom (6);
+
+    // Project card
+    const auto hasHint = relinkHint.isVisible();
+    projectCard = area.removeFromTop (hasHint ? 128 : 96);
+    {
+        auto c = projectCard.reduced (14, 10);
+        auto top = c.removeFromTop (18);
+        changeProjectButton.setBounds (projectCard.getRight() - 14 - 96, projectCard.getY() + 10, 96, 28);
+        projectHeading.setBounds (top.withTrimmedRight (100));
+        c.removeFromTop (4);
+        projectName.setBounds (c.removeFromTop (24).withTrimmedRight (100));
+        projectPath.setBounds (c.removeFromTop (20));
+        if (hasHint)
+        {
+            c.removeFromTop (4);
+            auto row = c.removeFromTop (28);
+            relinkButton.setBounds (row.removeFromRight (80));
+            relinkHint.setBounds (row);
+        }
+    }
+    area.removeFromTop (10);
+
+    // Capture card
+    captureCard = area.removeFromTop (138);
+    {
+        auto c = captureCard.reduced (14, 10);
+        captureHeading.setBounds (c.removeFromTop (18));
+        c.removeFromTop (6);
+
+        auto row = c.removeFromTop (30);
+        recordButton.setBounds (row.removeFromRight (90));
+        row.removeFromRight (10);
+        const auto half = row.getWidth() / 2;
+        auto modeArea = row.removeFromLeft (half);
+        modeLabel.setBounds (modeArea.removeFromLeft (52));
+        modeBox.setBounds (modeArea.reduced (0, 0).withTrimmedRight (8));
+        lengthLabel.setBounds (row.removeFromLeft (60));
+        lengthBox.setBounds (row);
+
+        c.removeFromTop (12);
+        meter.setBounds (c.removeFromTop (8));
+        c.removeFromTop (8);
+        captureStatus.setBounds (c.removeFromTop (22));
+    }
+    area.removeFromTop (10);
+
+    // To-do card
+    todoCard = area;
+    {
+        auto c = todoCard.reduced (14, 10);
+        todoHeading.setBounds (c.removeFromTop (18));
+        c.removeFromTop (4);
+
+        stampToggle.setBounds (c.removeFromBottom (24));
+        c.removeFromBottom (6);
+        auto inputRow = c.removeFromBottom (34);
+        addTodoButton.setBounds (inputRow.removeFromRight (70));
+        inputRow.removeFromRight (8);
+        todoInput.setBounds (inputRow);
+        c.removeFromBottom (8);
+        todoList.setBounds (c);
+    }
+
+    picker.setBounds (getLocalBounds());
+}
+
+} // namespace dpm

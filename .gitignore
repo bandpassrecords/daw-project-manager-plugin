@@ -1,0 +1,21 @@
+# Build output
+/build/
+/build-*/
+/Output/
+/dist/
+/pluginval/
+pluginval.zip
+
+# IDEs
+/.vs/
+/.vscode/
+/.idea/
+CMakeUserPresets.json
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local Claude settings (skills are committed)
+/.claude/settings.local.json
