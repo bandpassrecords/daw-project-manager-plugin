@@ -20,6 +20,10 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 
+  # "Run workflow" on the Actions tab: the full build and packaging of any
+  # branch, uploaded as artifacts — for checking the installers before a release.
+  workflow_dispatch:
+
 env:
   # Bump deliberately: https://github.com/Tracktion/pluginval/releases
   PLUGINVAL_VERSION: v1.0.4
@@ -77,12 +81,13 @@ jobs:
       - name: Run tests
         run: ctest --test-dir build -C Release --output-on-failure
 
-  # Builds, validates and packages the plugin. PRs upload the installers as
-  # workflow artifacts for testers; tags upload them to the GitHub release.
+  # Builds, validates and packages the plugin. PRs and manual runs upload the
+  # installers as workflow artifacts for testers; tags upload them to the
+  # GitHub release.
   build:
     name: Build ${{ matrix.label }}
     needs: unit_tests
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'pull_request'
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.os }}
 
     # Apple signing/notarization secrets, hoisted to job level so that step
@@ -124,7 +129,11 @@ jobs:
             REF_NAME="v${VERSION}"
           else
             VERSION=$(python3 -c "import json;print(json.load(open('changelog/changelog.json'))['releases'][0]['version'])")
-            REF_NAME="pr${{ github.event.pull_request.number }}"
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              REF_NAME="pr${{ github.event.pull_request.number }}"
+            else
+              REF_NAME="${GITHUB_REF_NAME//\//_}-${GITHUB_SHA::7}"
+            fi
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "ref_name=${REF_NAME}" >> "$GITHUB_OUTPUT"
@@ -250,8 +259,8 @@ jobs:
           fi
           gh release upload "$TAG" dist/* -R "$GITHUB_REPOSITORY" --clobber
 
-      - name: Upload artifact (PR)
-        if: github.event_name == 'pull_request'
+      - name: Upload artifact (PR or manual run)
+        if: "!startsWith(github.ref, 'refs/tags/v')"
         uses: actions/upload-artifact@v4
         with:
           name: DPM_Companion_${{ runner.os }}_${{ steps.version.outputs.ref_name }}
