@@ -177,6 +177,7 @@ if(DPM_BUILD_TESTS)
         tests/CompanionSessionTests.cpp
         tests/CompanionStateTests.cpp
         tests/OutboxTests.cpp
+        tests/PresenceTests.cpp
         tests/ProjectIndexTests.cpp
         tests/ProjectMatcherTests.cpp
         tests/LocalisationTests.cpp

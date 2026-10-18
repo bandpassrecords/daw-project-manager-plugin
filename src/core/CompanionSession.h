@@ -108,6 +108,31 @@ public:
     */
     int undeliveredCount() const;
 
+    // --- Presence ---------------------------------------------------------------
+    //
+    // What lets the app end a work session when the DAW lets go of the
+    // project: a goodbye when the instance is destroyed or relinked, and a
+    // heartbeat file for the times nothing gets to say goodbye (a crash).
+
+    /** Refreshes instances/<runId>.json while the app has been told which
+        project this instance is in; removes it otherwise. Call at least every
+        protocol::heartbeatSeconds.
+    */
+    void heartbeat();
+
+    /** The host is destroying this instance (project closed, DAW quitting,
+        plugin removed): tells the app it left, and removes the heartbeat.
+        Nothing is said for an instance that never said hello — a host's
+        plug-in scan creates and destroys instances in moments.
+    */
+    void sayGoodbye();
+
+    /** This running instance's id. Not saved: every copy of a project shares
+        the saved instance id, but each running instance is its own.
+    */
+    const juce::String& runId() const { return run; }
+    juce::File heartbeatFile() const { return bridge.instancesDir().getChildFile (run + ".json"); }
+
     // --- Captures ---------------------------------------------------------------
 
     struct CaptureOutcome
@@ -140,7 +165,17 @@ private:
     juce::int64 indexSize = -1, launchSize = -1;
     std::optional<LaunchHint> launch;
 
+    void goodbyeTo (const protocol::ProjectRef& project);
+
     bool helloPending = false;
+
+    /** The project the app was last told this instance is in: hello sent,
+        no goodbye yet. Empty otherwise.
+    */
+    protocol::ProjectRef presentIn;
+
+    const juce::String run = protocol::newId();
+    juce::Time startedAt;
 };
 
 /** Moves a file, copying across volumes when a rename can't. The target

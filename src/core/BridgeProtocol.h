@@ -19,7 +19,17 @@ namespace type
     inline constexpr const char* todoAdd = "todo.add";
     inline constexpr const char* todoSetCompleted = "todo.setCompleted";
     inline constexpr const char* captureReady = "capture.ready";
+
+    /** This instance has left the project: the DAW closed it or quit, the
+        plugin was removed, or it was linked to another project.
+    */
+    inline constexpr const char* goodbye = "session.goodbye";
 }
+
+/** A plugin instance must refresh its heartbeat at least this often... */
+inline constexpr int heartbeatSeconds = 10;
+/** ...and the app treats it as gone once it is this old. */
+inline constexpr int heartbeatStaleSeconds = 90;
 
 /** Which project a message is about. Matched by profile *and* id, never id
     alone: one id can sit in two profiles.
@@ -57,7 +67,8 @@ struct Envelope
     juce::String messageId;
     juce::String type;
     juce::Time createdAt;
-    juce::String instanceId;
+    juce::String instanceId;    // saved with the DAW project: copies of a project share it
+    juce::String runId;         // this running instance only: never saved
     ProjectRef project;
     HostContext host;
 };
@@ -81,6 +92,11 @@ struct CaptureInfo
 };
 
 juce::var captureReadyPayload (const CaptureInfo& info);
+
+/** instances/<runId>.json: which project a running instance is in, and when
+    it last said so.
+*/
+juce::String heartbeatJson (const Envelope& instance, juce::Time lastSeen, juce::Time startedAt);
 
 /** UTC, millisecond precision, "Z" suffix — what Dart's DateTime.parse reads. */
 juce::String formatTime (juce::Time t);

@@ -27,6 +27,11 @@ private:
     juce::File dir;
 };
 
+/** Writes `text` to "<name>.tmp" and renames it over `target`, so a reader
+    never sees half a file. Creates the folder. False on failure.
+*/
+bool writeFileAtomically (const juce::File& target, const juce::String& text);
+
 /** "20261018T010900123Z-000042-1a2b3c4d.json": UTC time, then a sequence
     number for messages written in the same millisecond, then part of the
     message id against two instances colliding.

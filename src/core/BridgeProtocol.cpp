@@ -44,7 +44,7 @@ juce::String toJson (const Envelope& e, const juce::var& payload)
         { "id", e.messageId },
         { "type", e.type },
         { "createdAt", formatTime (e.createdAt) },
-        { "plugin", object ({ { "version", DPM_VERSION_STRING }, { "instanceId", e.instanceId } }) },
+        { "plugin", object ({ { "version", DPM_VERSION_STRING }, { "instanceId", e.instanceId }, { "runId", e.runId } }) },
         { "host", e.host.toVar() },
         { "project", e.project.isLinked() ? e.project.toVar() : juce::var() },
         { "payload", payload },
@@ -95,6 +95,21 @@ namespace
         m = (int) (mp < 10 ? mp + 3 : mp - 9);
         y = (int) ((juce::int64) yoe + era * 400 + (m <= 2));
     }
+}
+
+juce::String heartbeatJson (const Envelope& e, juce::Time lastSeen, juce::Time startedAt)
+{
+    const auto beat = object ({
+        { "schema", schemaVersion },
+        { "runId", e.runId },
+        { "instanceId", e.instanceId },
+        { "pluginVersion", DPM_VERSION_STRING },
+        { "startedAt", formatTime (startedAt) },
+        { "lastSeen", formatTime (lastSeen) },
+        { "host", e.host.toVar() },
+        { "project", e.project.isLinked() ? e.project.toVar() : juce::var() },
+    });
+    return juce::JSON::toString (beat, juce::JSON::FormatOptions{}.withSpacing (juce::JSON::Spacing::multiLine));
 }
 
 juce::String formatTime (juce::Time t)

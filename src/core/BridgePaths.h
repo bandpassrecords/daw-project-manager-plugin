@@ -68,6 +68,11 @@ struct BridgeFolder
     juce::File outboxDir() const   { return root.getChildFile ("outbox"); }
     juce::File capturesDir() const { return root.getChildFile ("captures"); }
 
+    /** One heartbeat file per running plugin instance, so the app notices an
+        instance that vanished without a goodbye (a crashed DAW).
+    */
+    juce::File instancesDir() const { return root.getChildFile ("instances"); }
+
     /** A path inside the bridge folder written as the protocol writes paths:
         relative to the root, with forward slashes on every OS.
     */

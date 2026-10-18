@@ -14,6 +14,10 @@ namespace
     // The window title is re-read every few ticks: it changes when the
     // project is saved under a new name, and reading it walks every window.
     constexpr int titleEveryTicks = 3;
+
+    // Well inside protocol::heartbeatStaleSeconds, so a busy message thread
+    // missing a tick or two never reads as a crash.
+    constexpr int heartbeatEveryTicks = protocol::heartbeatSeconds * 1000 / tickMs;
 }
 
 BridgeClient::BridgeClient (BridgeFolder folder) : session (std::move (folder))
@@ -27,6 +31,11 @@ BridgeClient::BridgeClient (BridgeFolder folder) : session (std::move (folder))
 BridgeClient::~BridgeClient()
 {
     stopTimer();
+
+    // The host destroys the plugin when the project closes, the DAW quits or
+    // the plugin is removed: the app may end the work session on this.
+    const juce::ScopedLock sl (lock);
+    session.sayGoodbye();
 }
 
 void BridgeClient::readHostContext()
@@ -50,6 +59,9 @@ void BridgeClient::timerCallback()
         somethingChanged |= session.refresh();
         somethingChanged |= session.autoLink();
         somethingChanged |= session.deliver() > 0;
+
+        if (ticks % heartbeatEveryTicks == 0)
+            session.heartbeat();
     }
 
     if (somethingChanged)

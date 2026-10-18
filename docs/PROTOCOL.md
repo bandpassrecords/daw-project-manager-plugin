@@ -44,8 +44,10 @@ plugin_bridge/
 ├── launch.json         written by the app
 ├── outbox/             written by the plugin, emptied by the app
 │   └── 20261018T120000123Z-000003-1a2b3c4d.json
-└── captures/           written by the plugin, emptied by the app
-    └── Teardrop Remix_20261018-140233.flac
+├── captures/           written by the plugin, emptied by the app
+│   └── Teardrop Remix_20261018-140233.flac
+└── instances/          one heartbeat per running plugin instance
+    └── 5f0e…-runId.json
 ```
 
 Every file is written to a temporary name and renamed into place, so a reader
@@ -144,7 +146,7 @@ applied. Every message has the same envelope:
   "id": "c1d2e3f4-…",
   "type": "todo.add",
   "createdAt": "2026-10-18T12:00:05.000Z",
-  "plugin": { "version": "0.1.0", "instanceId": "…" },
+  "plugin": { "version": "0.1.0", "instanceId": "…", "runId": "…" },
   "host": { "name": "Steinberg Cubase 14", "windowTitle": "Cubase Pro Project - Teardrop" },
   "project": { "id": "6f0c…", "profileId": "a1b2…", "name": "Teardrop", "filePath": "C:\\…\\Teardrop.cpr" },
   "payload": { }
@@ -159,13 +161,23 @@ applied. Every message has the same envelope:
 - A message of a `type` the app doesn't know is logged and deleted. A newer
   plugin must not be able to fill the folder.
 
+- `plugin.instanceId` is saved with the DAW project, so every copy of a project
+  ("save as") shares it. `plugin.runId` belongs to one running instance and is
+  never saved. Presence is tracked by `runId`.
+
 ### `session.hello`
 
 A plugin instance is running inside this project: just linked, or loaded
 with a saved link when the DAW opened the project. Payload:
-`{ "linkedByUser": true }`. Use it as you like, for example to note that
-the project is open or to offer starting its session timer. It needs no
-reply.
+`{ "linkedByUser": true }`. From now until its goodbye, the instance keeps a
+heartbeat in `instances/` (see [Presence](#presence-and-work-sessions)).
+
+### `session.goodbye`
+
+The instance has left the project: the host destroyed it (project closed, DAW
+quitting, plugin removed), or it was linked to another project or unlinked.
+`createdAt` is when it left. Payload: `{}`. An instance that never sent a
+hello (a host's plug-in scan) never sends a goodbye.
 
 ### `todo.add`
 
@@ -227,6 +239,38 @@ Rules:
 - The plugin never records loops being cycled or offline renders: the app's
   mixdown detection already covers bounces.
 
+## Presence and work sessions
+
+While an instance is present in a project (after its hello, before its
+goodbye), it rewrites `instances/<runId>.json` at least every 10 seconds:
+
+```json
+{ "schema": 1, "runId": "…", "instanceId": "…", "pluginVersion": "0.1.0",
+  "startedAt": "2026-10-18T12:00:00.000Z", "lastSeen": "2026-10-18T12:41:50.000Z",
+  "host": { "name": "Steinberg Cubase 14", "windowTitle": "…" },
+  "project": { "id": "6f0c…", "profileId": "a1b2…", "name": "Teardrop", "filePath": "…" } }
+```
+
+It deletes the file with its goodbye. A file whose `lastSeen` is more than
+**90 seconds** old belongs to an instance that died without a goodbye (a
+crashed or killed DAW). The app treats it as gone at its `lastSeen`, and
+deletes the file.
+
+The app uses presence for its work sessions (both settings are device-local,
+in Settings > Work Sessions):
+
+- **End the session when the DAW closes the project** (on by default). When the
+  active session's project goes from at least one present instance to none, the
+  app ends the session **at the time the last instance left**: the goodbye's
+  `createdAt`, or the stale heartbeat's `lastSeen`. A session for a project no
+  plugin was ever present in is never ended this way.
+- **Start a session when a project opens in the DAW** (off by default). A hello
+  for a project in the active profile starts its session when none is running.
+  It never switches away from a running session.
+- After the computer sleeps, the app gives every instance a fresh 90 seconds
+  before calling it gone, so waking up doesn't end the session at the moment
+  the machine went to sleep.
+
 ## Acknowledgement
 
 The plugin keeps every to-do change it made in its saved state (inside the
@@ -251,4 +295,4 @@ is written the next time it can be.
 - It never deletes outbox messages: that is the app's job once it has applied
   them.
 - In `captures/` it deletes only a capture it wrote itself and has since
-  superseded.
+  superseded; in `instances/`, only its own heartbeat.

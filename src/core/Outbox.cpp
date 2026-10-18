@@ -23,25 +23,21 @@ juce::File Outbox::write (const juce::String& json, juce::Time createdAt, const 
     // the same millisecond still sort in the order they wrote.
     static std::atomic<juce::uint32> sequence { 0 };
 
-    if (! dir.createDirectory())
-        return {};
-
     const auto target = dir.getChildFile (outboxFileName (createdAt, sequence++, messageId));
+    return writeFileAtomically (target, json) ? target : juce::File();
+}
+
+bool writeFileAtomically (const juce::File& target, const juce::String& text)
+{
+    if (! target.getParentDirectory().createDirectory())
+        return false;
+
     const auto temp = target.withFileExtension (".tmp");
+    if (temp.replaceWithText (text, false, false, "\n") && temp.moveFileTo (target))
+        return true;
 
-    if (! temp.replaceWithText (json, false, false, "\n"))
-    {
-        temp.deleteFile();
-        return {};
-    }
-
-    if (! temp.moveFileTo (target))
-    {
-        temp.deleteFile();
-        return {};
-    }
-
-    return target;
+    temp.deleteFile();
+    return false;
 }
 
 } // namespace dpm

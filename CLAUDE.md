@@ -79,6 +79,12 @@ companion plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw
 - Captures: `CapturePolicy` decides takes on the audio thread; `CaptureEngine`
   writes them as FLAC on its own thread into the temp folder; the session
   judges them (`judgeTake`) and moves keepers into `captures/`.
+- Presence: after its hello an instance keeps `instances/<runId>.json` fresh
+  (every 10 s, `BridgeClient`) and says goodbye when destroyed, relinked or
+  unlinked (`CompanionSession::sayGoodbye`, `goodbyeTo`). The app ends work
+  sessions on it, so: `runId` is per running instance and never saved (copies
+  of a project share the saved instance id), and an instance that never said
+  hello — a host's plug-in scan — never says goodbye.
 - Stamped to-dos use the app's own format, `[MM:SS] text`
   (`playback_todo_utils.dart`). Keep them identical.
 - UI colours are the app's Classic Dark (`palette` in `CompanionLookAndFeel.h`).

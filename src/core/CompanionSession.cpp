@@ -15,10 +15,16 @@ CompanionSession::CompanionSession (BridgeFolder folder, Clock clock)
       outbox (bridge.outboxDir()),
       current (CompanionState::fresh())
 {
+    startedAt = now();
 }
 
 void CompanionSession::restore (CompanionState saved)
 {
+    // The host swapped this instance's state for another project's: the app
+    // must hear that it left the one it was in.
+    if (presentIn.isLinked() && ! presentIn.sameProject (saved.project))
+        goodbyeTo (presentIn);
+
     current = std::move (saved);
     if (current.instanceId.isEmpty())
         current.instanceId = protocol::newId();
@@ -163,6 +169,9 @@ void CompanionSession::linkTo (const IndexedProject& project, bool byUser)
         // against it would keep this project from getting one.
         current.lastCapture = {};
         helloPending = true;
+
+        if (presentIn.isLinked())
+            goodbyeTo (presentIn);
     }
 }
 
@@ -172,6 +181,9 @@ void CompanionSession::unlink()
     current.linkedByUser = false;
     current.lastCapture = {};
     helloPending = false;
+
+    if (presentIn.isLinked())
+        goodbyeTo (presentIn);
 }
 
 const IndexedProject* CompanionSession::linkedProject() const
@@ -232,6 +244,7 @@ protocol::Envelope CompanionSession::envelope (const char* type, const protocol:
     e.type = type;
     e.createdAt = at;
     e.instanceId = current.instanceId;
+    e.runId = run;
     e.project = project;
     e.host = host;
     return e;
@@ -253,6 +266,8 @@ int CompanionSession::deliver()
         if (! send (envelope (protocol::type::hello, current.project, now()), juce::var (obj)))
             return written;
         helloPending = false;
+        presentIn = current.project;
+        heartbeat();
         ++written;
     }
 
@@ -282,6 +297,36 @@ int CompanionSession::undeliveredCount() const
 {
     return (int) std::count_if (current.pendingTodos.begin(), current.pendingTodos.end(),
                                 [] (const PendingTodoOp& op) { return ! op.delivered; });
+}
+
+// --- Presence -------------------------------------------------------------------
+
+void CompanionSession::heartbeat()
+{
+    if (! presentIn.isLinked())
+    {
+        heartbeatFile().deleteFile();
+        return;
+    }
+
+    auto e = envelope (protocol::type::hello, presentIn, now());
+    writeFileAtomically (heartbeatFile(), protocol::heartbeatJson (e, now(), startedAt));
+}
+
+void CompanionSession::sayGoodbye()
+{
+    if (presentIn.isLinked())
+        goodbyeTo (presentIn);
+    heartbeatFile().deleteFile();
+}
+
+void CompanionSession::goodbyeTo (const protocol::ProjectRef& project)
+{
+    // Best effort and not queued: a goodbye that can't be written is covered
+    // by the heartbeat going stale, which the app notices on its own.
+    send (envelope (protocol::type::goodbye, project, now()), juce::var (new juce::DynamicObject()));
+    presentIn = {};
+    heartbeatFile().deleteFile();
 }
 
 // --- Captures -------------------------------------------------------------------
