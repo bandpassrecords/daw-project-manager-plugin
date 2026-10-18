@@ -1,10 +1,12 @@
 DPM Companion — install on Linux
 
-  ./install.sh            installs to ~/.vst3 (your user only)
-  sudo ./install.sh --system   installs to /usr/local/lib/vst3
+  ./install.sh                  installs to ~/.vst3 (your user only)
+  sudo ./install.sh --system    installs to /usr/local/lib/vst3 (everyone)
+  ./install.sh /some/folder     installs anywhere else; add that folder to
+                                your DAW's VST3 plug-in folders
 
-or copy "DPM Companion.vst3" into either folder yourself, then rescan
-plug-ins in your DAW.
+or copy "DPM Companion.vst3" into a folder yourself, then rescan plug-ins in
+your DAW.
 
 Put it on your master bus. It needs DAW Project Manager installed to share
 captures and to-dos: https://github.com/bandpassrecords/daw-project-manager

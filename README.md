@@ -34,9 +34,12 @@ Download from the [releases](https://github.com/bandpassrecords/dpm-companion/re
 
 | | |
 |---|---|
-| Windows | `DPM_Companion_Installer_vX.Y.Z.exe` (installs to `C:\Program Files\Common Files\VST3`) or the `.zip` |
-| macOS | `DPM_Companion_macOS_Installer_vX.Y.Z.pkg` (VST3 + AU) or the `.zip` |
-| Linux | `DPM_Companion_Linux_x86_64_vX.Y.Z.tar.gz`, then `./install.sh` |
+| Windows | `DPM_Companion_Installer_vX.Y.Z.exe`: for all users (`C:\Program Files\Common Files\VST3`) or just you (`%LOCALAPPDATA%\Programs\Common\VST3`, no admin rights), or any folder you pick. Or use the `.zip` |
+| macOS | `DPM_Companion_macOS_Installer_vX.Y.Z.pkg` (VST3 + AU), for all users (`/Library/Audio/Plug-Ins`) or just you (`~/Library/Audio/Plug-Ins`). Or use the `.zip` |
+| Linux | `DPM_Companion_Linux_x86_64_vX.Y.Z.tar.gz`, then `./install.sh` (`~/.vst3`), `sudo ./install.sh --system`, or `./install.sh <folder>` |
+
+The installers start on the standard plug-in folders, which every DAW scans.
+If you pick another folder, add it to your DAW's plug-in folders.
 
 Each file has a `.sha256` next to it.
 

@@ -1,7 +1,7 @@
 DPM Companion — manual install
 
-The .pkg installer next to this zip on the release page does this for you.
-To install by hand, copy:
+The .pkg installer next to this zip on the release page does this for you,
+for all users or for you only. To install by hand, copy:
 
   DPM Companion.vst3       ->  /Library/Audio/Plug-Ins/VST3/
   DPM Companion.component  ->  /Library/Audio/Plug-Ins/Components/

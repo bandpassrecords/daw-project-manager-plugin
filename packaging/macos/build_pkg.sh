@@ -82,7 +82,17 @@ pkgbuild --root "$WORK/root" --install-location / --component-plist "$WORK/compo
   "$WORK/component.pkg"
 
 PKG="$OUT/DPM_Companion_macOS_Installer_v$VERSION.pkg"
-productbuild --package "$WORK/component.pkg" "$WORK/unsigned.pkg"
+
+# A distribution that lets the user choose where it goes: "Install for all
+# users of this computer" (/Library/Audio/Plug-Ins) or "Install for me only"
+# (~/Library/Audio/Plug-Ins, no administrator password). macOS installers can
+# choose between those domains only, not an arbitrary folder — and those two
+# are where every host looks.
+productbuild --synthesize --package "$WORK/component.pkg" "$WORK/distribution.xml"
+perl -0pi -e 's|(<installer-gui-script[^>]*>)|$1\n    <title>DPM Companion</title>\n    <domains enable_localSystem="true" enable_currentUserHome="true" enable_anywhere="false"/>|' \
+  "$WORK/distribution.xml"
+grep -q 'enable_currentUserHome="true"' "$WORK/distribution.xml"
+productbuild --distribution "$WORK/distribution.xml" --package-path "$WORK" "$WORK/unsigned.pkg"
 
 if [ -n "${APPLE_INSTALLER_ID:-}" ]; then
   productsign --timestamp --sign "$APPLE_INSTALLER_ID" "$WORK/unsigned.pkg" "$PKG"
