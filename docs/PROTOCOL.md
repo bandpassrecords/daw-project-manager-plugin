@@ -270,6 +270,13 @@ in Settings > Work Sessions):
 - After the computer sleeps, the app gives every instance a fresh 90 seconds
   before calling it gone, so waking up doesn't end the session at the moment
   the machine went to sleep.
+- A session the DAW ended is never ended silently. The app shows its summary
+  (project, start–end, length) and why it ended: "{host.name} closed the
+  project" after a goodbye, or "DPM Companion stopped responding…" after a
+  stale heartbeat. It shows a dialog, plus a notification when the app window
+  isn't in front.
+- All times are converted to local time on arrival. Kept as UTC, they would
+  print hours off next to the app's own local times.
 
 ## Acknowledgement
 
