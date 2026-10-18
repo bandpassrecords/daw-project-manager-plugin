@@ -69,7 +69,13 @@ cmake --build build --config Debug --target DPMCompanionTests
 ctest --test-dir build -C Debug --output-on-failure
 ```
 
-JUCE 9.0.4 and Catch2 are downloaded at configure time. See
+JUCE 9.0.4 and Catch2 are downloaded at configure time.
+
+To try it without a DAW, build the Standalone app
+(`-DDPM_BUILD_STANDALONE=ON`, then the `DPMCompanion_Standalone` target). It
+has a test panel that pretends to be the DAW: play/stop with a test tone,
+loop, the DAW's window title, and closing, reopening or crashing the project.
+PR and manual CI builds attach it ready-made. See
 [`CLAUDE.md`](CLAUDE.md) for how the code is organised, and how to validate and
 release.
 

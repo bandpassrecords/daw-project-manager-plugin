@@ -102,6 +102,58 @@ TEST_CASE ("Placeholders survive translation", "[l10n]")
     }
 }
 
+TEST_CASE ("String literals in the code are ASCII", "[l10n]")
+{
+    // juce::String reads a plain literal as ASCII/Latin-1: a middle dot came
+    // out as "Â·" and asserts in debug builds. Non-English text belongs in
+    // the translations, symbols in juce::String::fromUTF8.
+    for (auto& f : sourceDir.getChildFile ("src").findChildFiles (juce::File::findFiles, true, "*.cpp;*.h;*.mm"))
+    {
+        juce::MemoryBlock bytes;
+        REQUIRE (f.loadFileAsData (bytes));
+        const auto* text = static_cast<const unsigned char*> (bytes.getData());
+        const auto size = bytes.getSize();
+
+        enum class In { code, lineComment, blockComment, string, character } in = In::code;
+        int line = 1;
+
+        for (size_t i = 0; i < size; ++i)
+        {
+            const auto c = text[i];
+            const auto next = i + 1 < size ? text[i + 1] : 0;
+            if (c == '\n')
+                ++line;
+
+            switch (in)
+            {
+                case In::code:
+                    if (c == '/' && next == '/')       { in = In::lineComment; ++i; }
+                    else if (c == '/' && next == '*')  { in = In::blockComment; ++i; }
+                    else if (c == '"')                 in = In::string;
+                    else if (c == '\'')                in = In::character;
+                    break;
+                case In::lineComment:
+                    if (c == '\n') in = In::code;
+                    break;
+                case In::blockComment:
+                    if (c == '*' && next == '/') { in = In::code; ++i; }
+                    break;
+                case In::string:
+                case In::character:
+                    if (c == '\\') { ++i; break; }
+                    if ((in == In::string && c == '"') || (in == In::character && c == '\''))
+                        in = In::code;
+                    else if (c > 127)
+                    {
+                        INFO (f.getFileName().toStdString() << ":" << line);
+                        FAIL ("non-ASCII character in a string literal");
+                    }
+                    break;
+            }
+        }
+    }
+}
+
 TEST_CASE ("The Portuguese translation is Brazilian", "[l10n]")
 {
     // CLAUDE.md: one Portuguese locale, and it targets Brazil.

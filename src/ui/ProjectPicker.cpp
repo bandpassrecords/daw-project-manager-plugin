@@ -151,7 +151,7 @@ void ProjectPicker::paintListBoxItem (int row, juce::Graphics& g, int width, int
 
     g.setColour (palette::textTertiary);
     g.setFont (juce::FontOptions (12.0f));
-    g.drawText (details.joinIntoString ("  ·  "), area, juce::Justification::centredLeft, true);
+    g.drawText (details.joinIntoString (detailSeparator), area, juce::Justification::centredLeft, true);
 }
 
 void ProjectPicker::listBoxItemDoubleClicked (int row, const juce::MouseEvent&)

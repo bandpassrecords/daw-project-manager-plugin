@@ -2,6 +2,7 @@
 
 #include "CompanionLookAndFeel.h"
 #include "ProjectPicker.h"
+#include "TestPanel.h"
 #include "TodoList.h"
 #include "plugin/PluginProcessor.h"
 
@@ -65,6 +66,7 @@ private:
     juce::Label footer;
     juce::HyperlinkButton updateLink;
     ProjectPicker picker;
+    std::unique_ptr<TestPanel> testPanel;   // Standalone only
 
     bool appConnected = false;
     juce::Rectangle<int> projectCard, captureCard, todoCard;

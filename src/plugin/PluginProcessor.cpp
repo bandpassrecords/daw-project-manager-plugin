@@ -77,7 +77,16 @@ void CompanionProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::M
     TransportState transport;
     transport.isRealtime = ! isNonRealtime();
 
-    if (auto* head = getPlayHead())
+    if (isStandalone())
+    {
+        // No DAW around the Standalone: its test panel is the transport, and
+        // the tone stands in for the mix (JUCE mutes the Standalone's input).
+        testTransport.process (buffer, getSampleRate());
+        transport.isPlaying = testTransport.isPlaying();
+        transport.isLooping = testTransport.isLooping();
+        playhead.store (testTransport.positionSeconds (getSampleRate()));
+    }
+    else if (auto* head = getPlayHead())
     {
         if (auto position = head->getPosition())
         {

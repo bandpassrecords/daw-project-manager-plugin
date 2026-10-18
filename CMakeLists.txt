@@ -58,6 +58,7 @@ set(DPM_CORE_SOURCES
     src/core/Outbox.cpp
     src/core/ProjectIndex.cpp
     src/core/ProjectMatcher.cpp
+    src/core/TestTransport.cpp
     src/core/TodoBook.cpp
     src/core/Version.cpp)
 
@@ -133,6 +134,7 @@ target_sources(DPMCompanion PRIVATE
     src/ui/CompanionLookAndFeel.cpp
     src/ui/PluginEditor.cpp
     src/ui/ProjectPicker.cpp
+    src/ui/TestPanel.cpp
     src/ui/TodoList.cpp)
 
 target_include_directories(DPMCompanion PRIVATE src)
@@ -181,6 +183,7 @@ if(DPM_BUILD_TESTS)
         tests/ProjectIndexTests.cpp
         tests/ProjectMatcherTests.cpp
         tests/LocalisationTests.cpp
+        tests/TestTransportTests.cpp
         tests/TodoBookTests.cpp
         tests/VersionTests.cpp)
     target_include_directories(DPMCompanionTests PRIVATE src tests)

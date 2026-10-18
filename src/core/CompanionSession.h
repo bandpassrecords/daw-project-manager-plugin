@@ -127,6 +127,12 @@ public:
     */
     void sayGoodbye();
 
+    /** Says hello again on the next delivery, after a goodbye — the project
+        opened again. Only the Standalone's test panel needs this: a DAW
+        makes a new instance instead.
+    */
+    void announceAgain() { helloPending = current.project.isLinked(); }
+
     /** This running instance's id. Not saved: every copy of a project shares
         the saved instance id, but each running instance is its own.
     */

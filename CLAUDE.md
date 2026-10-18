@@ -103,6 +103,21 @@ Pass `-DFETCHCONTENT_SOURCE_DIR_JUCE=<checkout>` to build against a local JUCE.
 Set `DPM_BRIDGE_DIR` to a scratch folder when running the plugin or pluginval,
 so nothing touches your real app library.
 
+### Testing without a DAW: the Standalone and its test panel
+`-DDPM_BUILD_STANDALONE=ON` builds `DPM Companion.exe`/`.app`, with a **test
+panel** (`src/ui/TestPanel.*`) that only the Standalone shows
+(`CompanionProcessor::isStandalone`): a pretend DAW.
+- **Transport:** Play/Stop, Rewind, Loop, and a test tone (`TestTransport`;
+  JUCE mutes the Standalone's input).
+- **Host:** the DAW's name and window title, for trying auto-linking.
+- **Lifecycle:** Close project (goodbye), Reopen (hello), Crash DAW (silence,
+  heartbeat left to go stale), Recover.
+
+Run it with `DPM_BRIDGE_DIR` pointing at a test library's bridge folder, or at
+none for the installed app's. CI attaches it to PR and manual builds, never to
+a release. The panel is a developer tool: **English only, the one exception to
+TRANS()**. Anything a user of the VST3/AU sees stays translated.
+
 ### Validating
 ```
 pluginval --strictness-level 10 --validate-in-process --validate "build/DPMCompanion_artefacts/Release/VST3/DPM Companion.vst3"

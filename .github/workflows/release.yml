@@ -146,7 +146,12 @@ jobs:
 
       - name: Configure
         shell: bash
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DDPM_BUILD_TESTS=OFF -DDPM_VERSION=${{ steps.version.outputs.version }}
+        # The Standalone (with its pretend-DAW test panel) is for testers:
+        # built for PRs and manual runs, never shipped in a release.
+        run: >
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DDPM_BUILD_TESTS=OFF
+          -DDPM_VERSION=${{ steps.version.outputs.version }}
+          -DDPM_BUILD_STANDALONE=${{ startsWith(github.ref, 'refs/tags/v') && 'OFF' || 'ON' }}
 
       - name: Build VST3
         run: cmake --build build --config Release --target DPMCompanion_VST3 --parallel
@@ -154,6 +159,10 @@ jobs:
       - name: Build AU (macOS)
         if: runner.os == 'macOS'
         run: cmake --build build --config Release --target DPMCompanion_AU --parallel
+
+      - name: Build Standalone for testers (PR or manual run)
+        if: "!startsWith(github.ref, 'refs/tags/v')"
+        run: cmake --build build --config Release --target DPMCompanion_Standalone --parallel
 
       # pluginval at its strictest: open/close, editor, state save/restore,
       # audio processing at many sample rates and block sizes, threading and
@@ -267,4 +276,13 @@ jobs:
         with:
           name: DPM_Companion_${{ runner.os }}_${{ steps.version.outputs.ref_name }}
           path: dist/
+          retention-days: 7
+
+      # Not signed: on macOS, right-click > Open the first time.
+      - name: Upload Standalone for testers (PR or manual run)
+        if: "!startsWith(github.ref, 'refs/tags/v')"
+        uses: actions/upload-artifact@v4
+        with:
+          name: DPM_Companion_Standalone_${{ runner.os }}_${{ steps.version.outputs.ref_name }}
+          path: build/DPMCompanion_artefacts/Release/Standalone/
           retention-days: 7

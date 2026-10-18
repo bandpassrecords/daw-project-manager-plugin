@@ -23,6 +23,13 @@ namespace palette
     inline constexpr float radius = 8.0f;
 }
 
+/** A middle dot between details. Built from UTF-8 bytes: a non-ASCII
+    character in a plain string literal is read as Latin-1 (showing as "A^.")
+    and asserts in debug builds. LocalisationTests keeps every literal in
+    src/ ASCII.
+*/
+inline const juce::String detailSeparator = juce::String::fromUTF8 ("  \xc2\xb7  ");
+
 class CompanionLookAndFeel : public juce::LookAndFeel_V4
 {
 public:

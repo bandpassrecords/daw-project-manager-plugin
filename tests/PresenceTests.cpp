@@ -138,6 +138,28 @@ TEST_CASE ("A state for another project, loaded after hello, says goodbye to the
     CHECK (f.types() == std::vector<juce::String> { "session.hello:song", "session.goodbye:song", "session.hello:other" });
 }
 
+TEST_CASE ("After a goodbye, announcing again says hello and restarts the heartbeat", "[presence]")
+{
+    // The Standalone's "Close project" then "Reopen project".
+    Fixture f;
+    f.link ("song");
+    f.session.deliver();
+    f.session.sayGoodbye();
+    CHECK (f.session.deliver() == 0);     // closed stays closed
+
+    f.session.announceAgain();
+    CHECK (f.session.deliver() == 1);
+    CHECK (f.types() == std::vector<juce::String> { "session.hello:song", "session.goodbye:song", "session.hello:song" });
+    CHECK (f.session.heartbeatFile().existsAsFile());
+}
+
+TEST_CASE ("Announcing again without a link says nothing", "[presence]")
+{
+    Fixture f;
+    f.session.announceAgain();
+    CHECK (f.session.deliver() == 0);
+}
+
 TEST_CASE ("Two running copies of one project are two instances", "[presence]")
 {
     // A project saved under a new name keeps the saved instance id; opened

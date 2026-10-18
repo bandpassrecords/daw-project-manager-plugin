@@ -202,8 +202,16 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     processor.bridge().addChangeListener (this);
 
     setResizable (true, true);
-    setResizeLimits (420, 520, 1000, 1200);
-    setSize (480, 620);
+    // The Standalone has no DAW around it: a pretend one goes on top.
+    const auto testHeight = processor.isStandalone() ? TestPanel::preferredHeight : 0;
+    if (processor.isStandalone())
+    {
+        testPanel = std::make_unique<TestPanel> (processor);
+        addAndMakeVisible (*testPanel);
+    }
+
+    setResizeLimits (420, 520 + testHeight, 1000, 1200 + testHeight);
+    setSize (480, 620 + testHeight);
 
     refreshFromSession();
     startTimerHz (20);
@@ -264,7 +272,7 @@ void CompanionEditor::refreshFromSession()
         projectName.setText (snap.project.name, juce::dontSendNotification);
         juce::String path = snap.project.filePath;
         if (snap.profileName.isNotEmpty())
-            path = snap.profileName + "  ·  " + path;
+            path = snap.profileName + detailSeparator + path;
         projectPath.setText (path, juce::dontSendNotification);
         projectPath.setTooltip (snap.project.filePath);
     }
@@ -298,9 +306,9 @@ void CompanionEditor::refreshFromSession()
 
     juce::String footerText = "v" DPM_VERSION_STRING;
     if (snap.undelivered == 1)
-        footerText << "  ·  " << TRANS ("1 change waiting for the app");
+        footerText << detailSeparator << TRANS ("1 change waiting for the app");
     else if (snap.undelivered > 1)
-        footerText << "  ·  " << TRANS ("{n} changes waiting for the app").replace ("{n}", juce::String (snap.undelivered));
+        footerText << detailSeparator << TRANS ("{n} changes waiting for the app").replace ("{n}", juce::String (snap.undelivered));
     footer.setText (footerText, juce::dontSendNotification);
 
     if (snap.update)
@@ -429,7 +437,10 @@ void CompanionEditor::paint (juce::Graphics& g)
 
 void CompanionEditor::resized()
 {
-    auto area = getLocalBounds().reduced (16);
+    auto bounds = getLocalBounds();
+    if (testPanel != nullptr)
+        testPanel->setBounds (bounds.removeFromTop (TestPanel::preferredHeight));
+    auto area = bounds.reduced (16);
 
     auto header = area.removeFromTop (30);
     const auto statusWidth = (int) juce::GlyphArrangement::getStringWidth (appStatus.getFont(), appStatus.getText()) + 30;

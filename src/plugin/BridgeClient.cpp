@@ -33,19 +33,81 @@ BridgeClient::~BridgeClient()
     stopTimer();
 
     // The host destroys the plugin when the project closes, the DAW quits or
-    // the plugin is removed: the app may end the work session on this.
+    // the plugin is removed: the app may end the work session on this. A
+    // simulated crash says nothing, as a real one couldn't.
     const juce::ScopedLock sl (lock);
-    session.sayGoodbye();
+    if (! crashed)
+        session.sayGoodbye();
 }
 
 void BridgeClient::readHostContext()
 {
     protocol::HostContext context;
-    context.hostName = juce::PluginHostType().getHostDescription();
-    context.windowTitle = readHostWindowTitle();
+    {
+        const juce::ScopedLock sl (lock);
+        context.hostName = testHostName;
+        context.windowTitle = testWindowTitle;
+    }
+    if (context.hostName.isEmpty())
+        context.hostName = juce::PluginHostType().getHostDescription();
+    if (context.windowTitle.isEmpty())
+        context.windowTitle = readHostWindowTitle();
 
     const juce::ScopedLock sl (lock);
     session.setHostContext (context);
+}
+
+void BridgeClient::setTestHost (const juce::String& hostName, const juce::String& windowTitle)
+{
+    {
+        const juce::ScopedLock sl (lock);
+        testHostName = hostName.trim();
+        testWindowTitle = windowTitle.trim();
+    }
+    readHostContext();
+    {
+        const juce::ScopedLock sl (lock);
+        session.autoLink();
+    }
+    changed();
+}
+
+void BridgeClient::simulateProjectClosed()
+{
+    {
+        const juce::ScopedLock sl (lock);
+        session.sayGoodbye();
+    }
+    sendChangeMessage();
+}
+
+void BridgeClient::simulateProjectReopened()
+{
+    {
+        const juce::ScopedLock sl (lock);
+        session.announceAgain();
+    }
+    changed();
+}
+
+void BridgeClient::simulateCrash()
+{
+    crashed = true;
+    stopTimer();
+    sendChangeMessage();
+}
+
+void BridgeClient::simulateRecovery()
+{
+    if (! crashed)
+        return;
+    crashed = false;
+    {
+        const juce::ScopedLock sl (lock);
+        session.announceAgain();
+    }
+    startTimer (tickMs);
+    changed();
 }
 
 void BridgeClient::timerCallback()
@@ -72,7 +134,10 @@ void BridgeClient::changed()
 {
     {
         const juce::ScopedLock sl (lock);
-        session.deliver();
+        // A (simulated) crashed DAW delivers nothing; changes wait in the
+        // state as they would in the project file.
+        if (! crashed)
+            session.deliver();
     }
     sendChangeMessage();
 }

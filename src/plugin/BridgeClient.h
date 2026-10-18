@@ -50,6 +50,30 @@ public:
     };
     LastTakeReport lastTake() const;
 
+    // --- The Standalone's test panel ------------------------------------------
+    // A pretend DAW: the Standalone has no host to read, close or crash.
+
+    /** Stands in for the host's name and window title. Empty title: read
+        the real window as usual.
+    */
+    void setTestHost (const juce::String& hostName, const juce::String& windowTitle);
+
+    /** The DAW closes the project: goodbye, as the host destroying the plugin. */
+    void simulateProjectClosed();
+
+    /** The DAW opens the project again: hello. */
+    void simulateProjectReopened();
+
+    /** The DAW crashes: everything stops, no goodbye, the heartbeat file is
+        left to go stale — what the app sees when Cubase dies.
+    */
+    void simulateCrash();
+
+    /** Back from a crash, as a freshly started DAW: hello and heartbeats again. */
+    void simulateRecovery();
+
+    bool isCrashed() const { return crashed; }
+
     JUCE_DECLARE_WEAK_REFERENCEABLE (BridgeClient)
 
 private:
@@ -60,6 +84,9 @@ private:
     CompanionSession session;
     LastTakeReport lastTakeReport;
     int ticks = 0;
+
+    juce::String testHostName, testWindowTitle;
+    bool crashed = false;
 };
 
 } // namespace dpm

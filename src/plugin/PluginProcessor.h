@@ -2,6 +2,7 @@
 
 #include "BridgeClient.h"
 #include "core/CaptureEngine.h"
+#include "core/TestTransport.h"
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
@@ -53,6 +54,12 @@ public:
     /** Where the host's playhead was at the last block, if it says. */
     std::optional<double> playheadSeconds() const;
 
+    /** The development-only Standalone build, which has no host: its test
+        panel stands in for one.
+    */
+    bool isStandalone() const { return wrapperType == wrapperType_Standalone; }
+    TestTransport& testTransportForStandalone() { return testTransport; }
+
 private:
     static juce::File takeFolder();
 
@@ -60,6 +67,7 @@ private:
     juce::WeakReference<BridgeClient> clientRef;
     CaptureEngine engine;   // after client: destroyed first, so no take outlives it
     std::atomic<double> playhead { -1.0 };
+    TestTransport testTransport;    // Standalone only
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CompanionProcessor)
 };
