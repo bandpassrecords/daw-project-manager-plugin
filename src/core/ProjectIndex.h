@@ -42,12 +42,23 @@ struct IndexedProject
     const IndexedTodo* findTodo (const juce::String& todoId) const;
 };
 
+/** The newest plugin release the app knows of. The app checks GitHub for it
+    (the plugin itself never goes on the network) and leaves it out when it
+    doesn't check — update checks off, or no network.
+*/
+struct CompanionRelease
+{
+    juce::String version;   // "0.2.0"
+    juce::String url;       // the release page
+};
+
 /** index.json: what the app tells every plugin instance about its library. */
 struct ProjectIndex
 {
     int schema = 0;
     juce::Time generatedAt;
     juce::String appVersion;
+    std::optional<CompanionRelease> latestRelease;
     std::vector<IndexedProject> projects;
 
     const IndexedProject* find (const juce::String& profileId, const juce::String& id) const;

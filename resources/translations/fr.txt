@@ -45,3 +45,4 @@ countries: fr be ca ch lu
 "Waiting for the app" = "En attente de l'application"
 "1 change waiting for the app" = "1 modification en attente de l'application"
 "{n} changes waiting for the app" = "{n} modifications en attente de l'application"
+"Update available: {version}" = "Mise à jour disponible : {version}"

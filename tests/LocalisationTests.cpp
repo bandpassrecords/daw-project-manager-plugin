@@ -93,7 +93,7 @@ TEST_CASE ("Placeholders survive translation", "[l10n]")
         const auto& mappings = strings.getMappings();
 
         for (auto& key : mappings.getAllKeys())
-            for (auto* placeholder : { "{n}", "{name}", "{time}", "{max}", "{length}" })
+            for (auto* placeholder : { "{n}", "{name}", "{time}", "{max}", "{length}", "{version}" })
                 if (key.contains (placeholder))
                 {
                     INFO (code.toStdString() << ": " << key.toStdString());

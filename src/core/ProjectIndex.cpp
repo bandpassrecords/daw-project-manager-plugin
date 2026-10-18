@@ -110,6 +110,11 @@ std::optional<ProjectIndex> ProjectIndex::parse (const juce::String& json, juce:
     index.generatedAt = timeOr (root["generatedAt"]);
     index.appVersion = root["app"]["version"].toString();
 
+    const auto& companion = root["companion"];
+    const auto latestVersion = companion["latestVersion"].toString().trim();
+    if (latestVersion.isNotEmpty())
+        index.latestRelease = CompanionRelease { latestVersion, companion["releaseUrl"].toString().trim() };
+
     if (auto* projects = root["projects"].getArray())
         for (auto& p : *projects)
             if (p.isObject() && p["id"].toString().isNotEmpty())

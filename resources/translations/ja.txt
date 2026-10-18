@@ -45,3 +45,4 @@ countries: jp
 "Waiting for the app" = "アプリを待っています"
 "1 change waiting for the app" = "1件の変更がアプリを待っています"
 "{n} changes waiting for the app" = "{n}件の変更がアプリを待っています"
+"Update available: {version}" = "アップデートがあります: {version}"

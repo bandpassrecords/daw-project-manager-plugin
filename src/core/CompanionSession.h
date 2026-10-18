@@ -77,6 +77,14 @@ public:
     /** The linked project's entry in the index, or null. */
     const IndexedProject* linkedProject() const;
 
+    // --- Updates ----------------------------------------------------------------
+
+    /** The newer release the app found, when there is one and its link points
+        at the plugin's own release page (a link anywhere else is ignored: the
+        plugin opens it in the browser).
+    */
+    std::optional<CompanionRelease> availableUpdate (const juce::String& installedVersion = DPM_VERSION_STRING) const;
+
     // --- To-dos -----------------------------------------------------------------
 
     std::vector<TodoView> todos() const;

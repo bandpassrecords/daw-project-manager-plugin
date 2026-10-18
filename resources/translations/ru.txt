@@ -45,3 +45,4 @@ countries: ru by kz
 "Waiting for the app" = "Ожидание приложения"
 "1 change waiting for the app" = "1 изменение ждёт приложения"
 "{n} changes waiting for the app" = "Изменений, ждущих приложения: {n}"
+"Update available: {version}" = "Доступно обновление: {version}"

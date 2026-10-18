@@ -1,6 +1,7 @@
 #include "CompanionSession.h"
 
 #include "CaptureNaming.h"
+#include "Version.h"
 
 #include <algorithm>
 #include <cmath>
@@ -176,6 +177,21 @@ void CompanionSession::unlink()
 const IndexedProject* CompanionSession::linkedProject() const
 {
     return loadedIndex ? loadedIndex->find (current.project) : nullptr;
+}
+
+// --- Updates --------------------------------------------------------------------
+
+std::optional<CompanionRelease> CompanionSession::availableUpdate (const juce::String& installedVersion) const
+{
+    if (! loadedIndex || ! loadedIndex->latestRelease)
+        return std::nullopt;
+
+    const auto& release = *loadedIndex->latestRelease;
+    if (! isNewerVersion (release.version, installedVersion))
+        return std::nullopt;
+    if (! release.url.startsWith (releasesUrlPrefix))
+        return std::nullopt;
+    return release;
 }
 
 // --- To-dos ---------------------------------------------------------------------

@@ -58,7 +58,8 @@ set(DPM_CORE_SOURCES
     src/core/Outbox.cpp
     src/core/ProjectIndex.cpp
     src/core/ProjectMatcher.cpp
-    src/core/TodoBook.cpp)
+    src/core/TodoBook.cpp
+    src/core/Version.cpp)
 
 set(DPM_JUCE_DEFINITIONS
     JUCE_WEB_BROWSER=0
@@ -179,7 +180,8 @@ if(DPM_BUILD_TESTS)
         tests/ProjectIndexTests.cpp
         tests/ProjectMatcherTests.cpp
         tests/LocalisationTests.cpp
-        tests/TodoBookTests.cpp)
+        tests/TodoBookTests.cpp
+        tests/VersionTests.cpp)
     target_include_directories(DPMCompanionTests PRIVATE src tests)
     target_compile_definitions(DPMCompanionTests PRIVATE ${DPM_JUCE_DEFINITIONS}
         DPM_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")

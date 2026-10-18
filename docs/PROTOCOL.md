@@ -106,6 +106,14 @@ learns they arrived, see [Acknowledgement](#acknowledgement)).
 - `name` is the name the app shows. `filePath` is the project file. `dawType`
   is `MetadataExtractor`'s name (`"Cubase"`, `"Ableton Live"`, `"Reaper"`, …).
 - `todos` keep the app's order. The plugin shows open to-dos first.
+- `companion` (optional) names the newest plugin release:
+  `{ "latestVersion": "0.2.0", "releaseUrl": "https://github.com/bandpassrecords/dpm-companion/releases/tag/v0.2.0" }`.
+  The app looks it up on GitHub (the plugin itself never goes on the network)
+  at most once a day, only when the user's update checks are on and only in
+  builds where the app checks its own updates. It leaves the field out
+  otherwise. The plugin shows "Update available" when that version is newer
+  than its own, and opens the link only if it points at the plugin's releases
+  page.
 - `schema` is `1`. Fields may be added freely: the plugin ignores what it
   doesn't know. A breaking change gets a new file name (`index.v2.json`), not a
   new schema number in the same file.

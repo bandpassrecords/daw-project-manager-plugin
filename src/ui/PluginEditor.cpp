@@ -166,6 +166,12 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     style (footer, 11.0f, palette::textTertiary);
     addAndMakeVisible (footer);
 
+    // Opens the release page in the browser: the app found the release, so
+    // the plugin itself never goes on the network.
+    updateLink.setFont (juce::FontOptions (11.0f, juce::Font::bold), false, juce::Justification::centredRight);
+    updateLink.setColour (juce::HyperlinkButton::textColourId, palette::warning);
+    addChildComponent (updateLink);
+
     picker.rowsFor = [this] (const juce::String& query)
     {
         return processor.bridge().withSession ([&query] (CompanionSession& s)
@@ -227,6 +233,7 @@ void CompanionEditor::refreshFromSession()
         std::vector<TodoView> todos;
         CompanionState state;
         int undelivered = 0;
+        std::optional<CompanionRelease> update;
     };
 
     const auto snap = processor.bridge().withSession ([] (CompanionSession& s)
@@ -245,6 +252,7 @@ void CompanionEditor::refreshFromSession()
         }
         out.todos = s.todos();
         out.undelivered = s.undeliveredCount();
+        out.update = s.availableUpdate();
         return out;
     });
 
@@ -294,6 +302,14 @@ void CompanionEditor::refreshFromSession()
     else if (snap.undelivered > 1)
         footerText << "  ·  " << TRANS ("{n} changes waiting for the app").replace ("{n}", juce::String (snap.undelivered));
     footer.setText (footerText, juce::dontSendNotification);
+
+    if (snap.update)
+    {
+        updateLink.setButtonText (TRANS ("Update available: {version}").replace ("{version}", "v" + snap.update->version));
+        updateLink.setURL (juce::URL (snap.update->url));
+        updateLink.setTooltip (snap.update->url);
+    }
+    updateLink.setVisible (snap.update.has_value());
 
     if (picker.isVisible())
         picker.refresh (snap.hasIndex, snap.linked);
@@ -423,7 +439,14 @@ void CompanionEditor::resized()
     subtitle.setBounds (header);
     area.removeFromTop (10);
 
-    footer.setBounds (area.removeFromBottom (16));
+    auto footerRow = area.removeFromBottom (16);
+    if (updateLink.isVisible())
+    {
+        const auto linkWidth = (int) juce::GlyphArrangement::getStringWidth (
+                                   juce::Font (juce::FontOptions (11.0f, juce::Font::bold)), updateLink.getButtonText()) + 8;
+        updateLink.setBounds (footerRow.removeFromRight (linkWidth));
+    }
+    footer.setBounds (footerRow);
     area.removeFromBottom (6);
 
     // Project card

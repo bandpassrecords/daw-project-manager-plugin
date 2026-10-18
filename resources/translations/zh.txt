@@ -45,3 +45,4 @@ countries: cn sg
 "Waiting for the app" = "等待应用"
 "1 change waiting for the app" = "1 项更改等待应用"
 "{n} changes waiting for the app" = "{n} 项更改等待应用"
+"Update available: {version}" = "有可用更新：{version}"

@@ -63,6 +63,7 @@ private:
     juce::ToggleButton stampToggle;
 
     juce::Label footer;
+    juce::HyperlinkButton updateLink;
     ProjectPicker picker;
 
     bool appConnected = false;

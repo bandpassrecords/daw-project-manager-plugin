@@ -45,3 +45,4 @@ countries: it ch sm
 "Waiting for the app" = "In attesa dell'app"
 "1 change waiting for the app" = "1 modifica in attesa dell'app"
 "{n} changes waiting for the app" = "{n} modifiche in attesa dell'app"
+"Update available: {version}" = "Aggiornamento disponibile: {version}"
