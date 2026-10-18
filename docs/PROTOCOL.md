@@ -144,8 +144,8 @@ applied. Every message has the same envelope:
 ```
 
 - `project` is `null` when the plugin isn't linked. Only `capture.ready` is
-  ever sent unlinked. The app may still match it by `host.windowTitle`, the
-  way the plugin does, or ignore it.
+  ever sent unlinked. An app could match it by `host.windowTitle`, the way the
+  plugin does; the app currently drops it, along with its capture.
 - `id` is unique per message. Applying the same message twice must change
   nothing: remember applied ids, or make each apply idempotent as below.
 - A message of a `type` the app doesn't know is logged and deleted. A newer
@@ -199,11 +199,14 @@ the message: a deletion beats a tick.
 ```
 
 A pre-listen recording of the project, 24-bit FLAC, `file` relative to the
-bridge folder. Adopt it the way a detected mixdown is adopted:
+bridge folder. The app (`companion_bridge_service.dart`):
 
-1. copy it into the app's preview-song storage;
-2. offer it, or set it, as the project's preview;
-3. delete the file in `captures/`.
+1. copies it to `preview_songs/companion/<project id>/`;
+2. makes it the project's preview song (the stack's, for a member), but only
+   when the project has no preview, its preview is an earlier capture, or its
+   preview is an auto-detected mixdown older than the capture. A preview the
+   user picked is never replaced;
+3. deletes the file in `captures/`, adopted or not.
 
 Rules:
 

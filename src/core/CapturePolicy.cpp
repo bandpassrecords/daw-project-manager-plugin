@@ -84,17 +84,24 @@ CaptureStep CapturePolicy::process (const CaptureBlock& block)
             break;
     }
 
+    // Each of these ends a take in progress, and otherwise only moves the
+    // state on (endTake with no take running would report a take that never was).
+    auto stopOrEnd = [this] (TakeEnd why, State next)
+    {
+        if (state == State::recording)
+            return endTake (why, next);
+        state = next;
+        return CaptureStep {};
+    };
+
     if (! block.isRealtime)
-        return state == State::recording ? endTake (TakeEnd::offline, State::waitingForStop)
-                                         : (state = State::waitingForStop, CaptureStep {});
+        return stopOrEnd (TakeEnd::offline, State::waitingForStop);
 
     if (! block.isPlaying)
-        return state == State::recording ? endTake (TakeEnd::stopped, State::idle)
-                                         : (state = State::idle, CaptureStep {});
+        return stopOrEnd (TakeEnd::stopped, State::idle);
 
     if (block.isLooping)
-        return state == State::recording ? endTake (TakeEnd::looped, State::waitingForStop)
-                                         : (state = State::waitingForStop, CaptureStep {});
+        return stopOrEnd (TakeEnd::looped, State::waitingForStop);
 
     switch (state)
     {
