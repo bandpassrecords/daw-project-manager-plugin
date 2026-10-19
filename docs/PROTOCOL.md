@@ -257,7 +257,7 @@ crashed or killed DAW). The app treats it as gone at its `lastSeen`, and
 deletes the file.
 
 The app uses presence for its work sessions (both settings are device-local,
-in Settings > Work Sessions):
+in Settings > DAW plugin):
 
 - **End the session when the DAW closes the project** (on by default). When the
   active session's project goes from at least one present instance to none, the
