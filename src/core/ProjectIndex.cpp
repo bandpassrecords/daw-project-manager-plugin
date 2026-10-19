@@ -72,6 +72,7 @@ namespace
         p.name = v["name"].toString();
         p.filePath = v["filePath"].toString();
         p.dawType = v["dawType"].toString();
+        p.notes = v["notes"].toString();
 
         if (auto* todos = v["todos"].getArray())
             for (auto& t : *todos)
@@ -114,6 +115,11 @@ std::optional<ProjectIndex> ProjectIndex::parse (const juce::String& json, juce:
     const auto latestVersion = companion["latestVersion"].toString().trim();
     if (latestVersion.isNotEmpty())
         index.latestRelease = CompanionRelease { latestVersion, companion["releaseUrl"].toString().trim() };
+
+    if (auto* applied = root["applied"].getArray())
+        for (auto& id : *applied)
+            if (id.isString())
+                index.applied.add (id.toString());
 
     if (auto* projects = root["projects"].getArray())
         for (auto& p : *projects)

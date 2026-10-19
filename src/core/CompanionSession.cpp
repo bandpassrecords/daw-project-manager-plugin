@@ -82,6 +82,7 @@ bool CompanionSession::refresh()
                 loadedIndex = std::move (parsed);
                 lastIndexError.clear();
                 pruneAcknowledged (current.pendingTodos, *loadedIndex);
+                pruneAcknowledgedNotes (current.pendingNotes, *loadedIndex);
                 adoptIndexDetails();
             }
             else
@@ -237,10 +238,11 @@ void CompanionSession::setTodoCompleted (const juce::String& todoId, bool comple
 
 // --- Delivery -------------------------------------------------------------------
 
-protocol::Envelope CompanionSession::envelope (const char* type, const protocol::ProjectRef& project, juce::Time at) const
+protocol::Envelope CompanionSession::envelope (const char* type, const protocol::ProjectRef& project, juce::Time at,
+                                                const juce::String& messageId) const
 {
     protocol::Envelope e;
-    e.messageId = protocol::newId();
+    e.messageId = messageId.isNotEmpty() ? messageId : protocol::newId();
     e.type = type;
     e.createdAt = at;
     e.instanceId = current.instanceId;
@@ -290,13 +292,53 @@ int CompanionSession::deliver()
         ++written;
     }
 
+    for (auto& op : current.pendingNotes)
+    {
+        if (op.delivered)
+            continue;
+
+        // The edit's own id is the message id: the app lists it in the
+        // index's "applied" once done, which is how the edit is confirmed.
+        if (! send (envelope (protocol::type::notesSet, op.project, op.at, op.opId),
+                    protocol::notesSetPayload (op.text, op.baseText, op.at)))
+            return written;
+
+        op.delivered = true;
+        ++written;
+    }
+
     return written;
 }
 
 int CompanionSession::undeliveredCount() const
 {
     return (int) std::count_if (current.pendingTodos.begin(), current.pendingTodos.end(),
-                                [] (const PendingTodoOp& op) { return ! op.delivered; });
+                                [] (const PendingTodoOp& op) { return ! op.delivered; })
+         + (int) std::count_if (current.pendingNotes.begin(), current.pendingNotes.end(),
+                                [] (const PendingNotesOp& op) { return ! op.delivered; });
+}
+
+// --- Notes ----------------------------------------------------------------------
+
+juce::String CompanionSession::notes() const
+{
+    return currentNotes (linkedProject(), current.pendingNotes, current.project);
+}
+
+juce::String CompanionSession::appNotes() const
+{
+    auto* p = linkedProject();
+    return p != nullptr ? p->notes : juce::String();
+}
+
+bool CompanionSession::notesPending() const
+{
+    return dpm::notesPending (current.pendingNotes, current.project);
+}
+
+bool CompanionSession::setNotes (const juce::String& text)
+{
+    return addNotesEdit (current.pendingNotes, current.project, text, notes(), now());
 }
 
 // --- Presence -------------------------------------------------------------------

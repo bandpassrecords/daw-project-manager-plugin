@@ -24,6 +24,9 @@ namespace type
         plugin was removed, or it was linked to another project.
     */
     inline constexpr const char* goodbye = "session.goodbye";
+
+    /** The project's notes, edited in the plugin. */
+    inline constexpr const char* notesSet = "notes.set";
 }
 
 /** A plugin instance must refresh its heartbeat at least this often... */
@@ -78,6 +81,11 @@ juce::String toJson (const Envelope& envelope, const juce::var& payload);
 
 juce::var todoAddPayload (const juce::String& todoId, const juce::String& text, juce::Time createdAt);
 juce::var todoSetCompletedPayload (const juce::String& todoId, bool completed, juce::Time changedAt);
+
+/** The whole new text, and the text it was edited from — so the app can tell
+    an edit of what it has from an edit of something it has since changed.
+*/
+juce::var notesSetPayload (const juce::String& text, const juce::String& baseText, juce::Time changedAt);
 
 struct CaptureInfo
 {

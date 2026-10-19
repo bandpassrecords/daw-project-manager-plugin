@@ -34,6 +34,9 @@ namespace ids
     static const juce::Identifier completed ("completed");
     static const juce::Identifier at ("at");
     static const juce::Identifier delivered ("delivered");
+    static const juce::Identifier pendingNotes ("PendingNotes");
+    static const juce::Identifier notesOp ("NotesOp");
+    static const juce::Identifier baseText ("baseText");
 }
 
 const std::vector<int>& CaptureSettings::lengthChoices()
@@ -122,6 +125,19 @@ juce::ValueTree CompanionState::toValueTree() const
     }
     tree.appendChild (pendingTree, nullptr);
 
+    juce::ValueTree notesTree (ids::pendingNotes);
+    for (auto& op : pendingNotes)
+    {
+        juce::ValueTree t (ids::notesOp, { { ids::opId, op.opId },
+                                           { ids::text, op.text },
+                                           { ids::baseText, op.baseText },
+                                           { ids::at, protocol::formatTime (op.at) },
+                                           { ids::delivered, op.delivered } });
+        t.appendChild (projectTree (op.project), nullptr);
+        notesTree.appendChild (t, nullptr);
+    }
+    tree.appendChild (notesTree, nullptr);
+
     return tree;
 }
 
@@ -166,6 +182,20 @@ CompanionState CompanionState::fromValueTree (const juce::ValueTree& tree)
 
         if (op.opId.isNotEmpty() && op.todoId.isNotEmpty() && op.project.isLinked())
             s.pendingTodos.push_back (op);
+    }
+
+    for (auto t : tree.getChildWithName (ids::pendingNotes))
+    {
+        PendingNotesOp op;
+        op.opId = t[ids::opId].toString();
+        op.text = t[ids::text].toString();
+        op.baseText = t[ids::baseText].toString();
+        op.at = timeFrom (t[ids::at]);
+        op.delivered = (bool) t[ids::delivered];
+        op.project = projectFrom (t.getChildWithName (ids::project));
+
+        if (op.opId.isNotEmpty() && op.project.isLinked())
+            s.pendingNotes.push_back (op);
     }
 
     return s;

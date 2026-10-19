@@ -141,7 +141,40 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
         addAndMakeVisible (c);
 
     // To-dos
-    heading (todoHeading, TRANS ("To-dos"));
+    for (auto* tab : { &todosTab, &notesTab })
+    {
+        tab->setClickingTogglesState (false);
+        tab->setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
+        tab->setColour (juce::TextButton::buttonOnColourId, palette::primary);
+        tab->setColour (juce::TextButton::textColourOffId, palette::textTertiary);
+        tab->setColour (juce::TextButton::textColourOnId, palette::text);
+        addAndMakeVisible (*tab);
+    }
+    todosTab.setButtonText (TRANS ("To-dos").toUpperCase());
+    notesTab.setButtonText (TRANS ("Notes").toUpperCase());
+    todosTab.onClick = [this] { showNotes (false); };
+    notesTab.onClick = [this] { showNotes (true); };
+
+    notesEditor.setMultiLine (true, true);
+    notesEditor.setReturnKeyStartsNewLine (true);
+    notesEditor.setScrollbarsShown (true);
+    notesEditor.setIndents (10, 8);
+    notesEditor.setInputRestrictions (maxNotesLength);
+    notesEditor.setTextToShowWhenEmpty (TRANS ("Write notes for this project..."), palette::textTertiary);
+    notesEditor.onTextChange = [this] { refreshNotesStatus(); };
+    saveNotesButton.setButtonText (TRANS ("Save"));
+    saveNotesButton.onClick = [this] { saveNotes(); };
+    reloadNotesButton.setButtonText (TRANS ("Reload"));
+    reloadNotesButton.setColour (juce::TextButton::buttonColourId, palette::divider);
+    reloadNotesButton.onClick = [this]
+    {
+        notesLoaded = processor.bridge().withSession ([] (CompanionSession& s) { return s.notes(); });
+        notesEditor.setText (notesLoaded, juce::dontSendNotification);
+        refreshNotesStatus();
+    };
+    style (notesStatus, 12.0f, palette::textTertiary);
+    for (auto* c : std::initializer_list<juce::Component*> { &notesEditor, &saveNotesButton, &reloadNotesButton, &notesStatus })
+        addChildComponent (c);
     todoList.onToggle = [this] (const juce::String& todoId, bool completed)
     {
         processor.bridge().withSession ([&] (CompanionSession& s) { s.setTodoCompleted (todoId, completed); });
@@ -159,8 +192,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
         const auto on = stampToggle.getToggleState();
         processor.bridge().withSession ([on] (CompanionSession& s) { s.setStampTodosWithTime (on); });
     };
-    for (auto* c : std::initializer_list<juce::Component*> { &todoHeading, &todoList, &todoInput, &addTodoButton,
-                                                            &stampToggle })
+    for (auto* c : std::initializer_list<juce::Component*> { &todoList, &todoInput, &addTodoButton, &stampToggle })
         addAndMakeVisible (c);
 
     style (footer, 11.0f, palette::textTertiary);
@@ -213,6 +245,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     setResizeLimits (420, 520 + testHeight, 1000, 1200 + testHeight);
     setSize (480, 620 + testHeight);
 
+    showNotes (false);
     refreshFromSession();
     startTimerHz (20);
 }
@@ -242,6 +275,7 @@ void CompanionEditor::refreshFromSession()
         CompanionState state;
         int undelivered = 0;
         std::optional<CompanionRelease> update;
+        juce::String notes;
     };
 
     const auto snap = processor.bridge().withSession ([] (CompanionSession& s)
@@ -261,8 +295,21 @@ void CompanionEditor::refreshFromSession()
         out.todos = s.todos();
         out.undelivered = s.undeliveredCount();
         out.update = s.availableUpdate();
+        out.notes = s.notes();
         return out;
     });
+
+    // The notes editor follows the session unless the user is typing in it.
+    if (! notesDirty() && notesEditor.getText() != snap.notes)
+    {
+        notesEditor.setText (snap.notes, juce::dontSendNotification);
+        notesLoaded = snap.notes;
+    }
+    notesEditor.setEnabled (snap.linked);
+    notesEditor.setTextToShowWhenEmpty (snap.linked ? TRANS ("Write notes for this project...")
+                                                    : TRANS ("Link a project to see its notes."),
+                                        palette::textTertiary);
+    refreshNotesStatus();
 
     appConnected = snap.hasIndex;
     appStatus.setText (appConnected ? TRANS ("App connected") : TRANS ("App not found"), juce::dontSendNotification);
@@ -408,6 +455,51 @@ void CompanionEditor::showPicker (bool show)
     }
 }
 
+void CompanionEditor::showNotes (bool notes)
+{
+    showingNotes = notes;
+    todosTab.setToggleState (! notes, juce::dontSendNotification);
+    notesTab.setToggleState (notes, juce::dontSendNotification);
+
+    for (auto* c : std::initializer_list<juce::Component*> { &todoList, &todoInput, &addTodoButton, &stampToggle })
+        c->setVisible (! notes);
+    for (auto* c : std::initializer_list<juce::Component*> { &notesEditor, &saveNotesButton, &notesStatus })
+        c->setVisible (notes);
+    refreshNotesStatus();
+}
+
+void CompanionEditor::refreshNotesStatus()
+{
+    const auto [pending, appNotes] = processor.bridge().withSession ([] (CompanionSession& s)
+    {
+        return std::pair { s.notesPending(), s.notes() };
+    });
+
+    // Typing while the app's notes moved on: keep the typing, offer the app's.
+    const auto changedInApp = notesDirty() && appNotes != notesLoaded;
+
+    juce::String status;
+    if (changedInApp)
+        status = TRANS ("The notes changed in the app.");
+    else if (pending && ! notesDirty())
+        status = TRANS ("Waiting for the app");
+
+    notesStatus.setText (status, juce::dontSendNotification);
+    notesStatus.setColour (juce::Label::textColourId, changedInApp ? palette::warning : palette::textTertiary);
+    reloadNotesButton.setVisible (showingNotes && changedInApp);
+    saveNotesButton.setEnabled (notesDirty());
+}
+
+void CompanionEditor::saveNotes()
+{
+    const auto text = notesEditor.getText();
+    const auto saved = processor.bridge().withSession ([&text] (CompanionSession& s) { return s.setNotes (text); });
+    notesLoaded = text;
+    if (saved)
+        processor.bridge().changed();
+    refreshNotesStatus();
+}
+
 void CompanionEditor::addTodo()
 {
     const auto text = todoInput.getText();
@@ -509,8 +601,21 @@ void CompanionEditor::resized()
     todoCard = area;
     {
         auto c = todoCard.reduced (14, 10);
-        todoHeading.setBounds (c.removeFromTop (18));
-        c.removeFromTop (4);
+        auto tabs = c.removeFromTop (24);
+        todosTab.setBounds (tabs.removeFromLeft (90));
+        tabs.removeFromLeft (6);
+        notesTab.setBounds (tabs.removeFromLeft (90));
+        c.removeFromTop (8);
+
+        auto notesArea = c;
+        auto notesRow = notesArea.removeFromBottom (30);
+        saveNotesButton.setBounds (notesRow.removeFromRight (80));
+        notesRow.removeFromRight (8);
+        reloadNotesButton.setBounds (notesRow.removeFromRight (80));
+        notesRow.removeFromRight (8);
+        notesStatus.setBounds (notesRow);
+        notesArea.removeFromBottom (8);
+        notesEditor.setBounds (notesArea);
 
         stampToggle.setBounds (c.removeFromBottom (24));
         c.removeFromBottom (6);

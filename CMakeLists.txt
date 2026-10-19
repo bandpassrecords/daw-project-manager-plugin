@@ -55,6 +55,7 @@ set(DPM_CORE_SOURCES
     src/core/CompanionSession.cpp
     src/core/CompanionState.cpp
     src/core/Localisation.cpp
+    src/core/NotesBook.cpp
     src/core/Outbox.cpp
     src/core/ProjectIndex.cpp
     src/core/ProjectMatcher.cpp
@@ -183,6 +184,7 @@ if(DPM_BUILD_TESTS)
         tests/ProjectIndexTests.cpp
         tests/ProjectMatcherTests.cpp
         tests/LocalisationTests.cpp
+        tests/NotesTests.cpp
         tests/TestTransportTests.cpp
         tests/TodoBookTests.cpp
         tests/VersionTests.cpp)

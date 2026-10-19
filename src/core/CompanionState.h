@@ -62,6 +62,20 @@ struct PendingTodoOp
     bool delivered = false;         // written to the outbox
 };
 
+/** A notes edit made in the plugin that the app hasn't confirmed yet. Like
+    to-do ops, kept in the saved state until the app's index says it was
+    applied.
+*/
+struct PendingNotesOp
+{
+    juce::String opId;              // also the message id the app reports back
+    protocol::ProjectRef project;
+    juce::String text;
+    juce::String baseText;          // what the notes said when this edit began
+    juce::Time at;
+    bool delivered = false;
+};
+
 /** One plugin instance's saved state. */
 struct CompanionState
 {
@@ -75,6 +89,7 @@ struct CompanionState
     LastCapture lastCapture;
     bool stampTodosWithTime = false;
     std::vector<PendingTodoOp> pendingTodos;
+    std::vector<PendingNotesOp> pendingNotes;
 
     juce::ValueTree toValueTree() const;
 

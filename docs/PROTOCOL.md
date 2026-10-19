@@ -108,6 +108,11 @@ learns they arrived, see [Acknowledgement](#acknowledgement)).
 - `name` is the name the app shows. `filePath` is the project file. `dawType`
   is `MetadataExtractor`'s name (`"Cubase"`, `"Ableton Live"`, `"Reaper"`, …).
 - `todos` keep the app's order. The plugin shows open to-dos first.
+- `notes` is the project's notes as the app shows them (a stack member's: the
+  stack's). It is plain text, empty when there are none.
+- `applied` (top level) lists the ids of the plugin messages the app handled
+  in the last 30 minutes, whatever came of them. A notes edit is confirmed by
+  its id appearing here.
 - `companion` (optional) names the newest plugin release:
   `{ "latestVersion": "0.2.0", "releaseUrl": "https://github.com/bandpassrecords/dpm-companion/releases/tag/v0.2.0" }`.
   The app looks it up on GitHub (the plugin itself never goes on the network)
@@ -202,6 +207,26 @@ writes (`buildTimestampedTodoText`).
 
 Set that to-do's `completed`. If the to-do is gone (deleted in the app), drop
 the message: a deletion beats a tick.
+
+### `notes.set`
+
+```json
+"payload": { "text": "Vocals: comp verse 2
+Bass: sidechain", "baseText": "Vocals: comp verse 2",
+             "changedAt": "2026-10-19T12:00:05.000Z" }
+```
+
+The project's whole new notes text, and the text the edit began from. The
+message `id` is the edit's own id, which the app lists in `applied` once
+handled. Notes are never silently lost:
+
+- the app's notes still read as `baseText`: the plugin's `text` replaces them;
+- they already read as `text`: nothing changes (a replay is harmless);
+- they changed in the app meanwhile: the app keeps both, its own text, a
+  line of dashes, then the plugin's.
+
+While the user is typing in the plugin, notes arriving from the app never
+overwrite the editor. The plugin offers "Reload" instead.
 
 ### `capture.ready`
 

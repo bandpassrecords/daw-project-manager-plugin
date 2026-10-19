@@ -41,6 +41,9 @@ private:
     void refreshCaptureStatus();
     void showPicker (bool show);
     void addTodo();
+    void saveNotes();
+    void showNotes (bool notes);
+    void refreshNotesStatus();
 
     CompanionProcessor& processor;
     CompanionLookAndFeel lookAndFeel;
@@ -57,11 +60,23 @@ private:
     juce::TextButton recordButton;
     LevelMeter meter;
 
-    juce::Label todoHeading;
+    // The bottom card: the project's to-dos, or its notes.
+    juce::TextButton todosTab, notesTab;
+    bool showingNotes = false;
     TodoList todoList;
     juce::TextEditor todoInput;
     juce::TextButton addTodoButton;
     juce::ToggleButton stampToggle;
+
+    juce::TextEditor notesEditor;
+    juce::TextButton saveNotesButton, reloadNotesButton;
+    juce::Label notesStatus;
+    /** The text last loaded into the editor from the session: typing makes
+        the editor differ from it ("dirty"), and a dirty editor is never
+        overwritten by what the app sends.
+    */
+    juce::String notesLoaded;
+    bool notesDirty() const { return notesEditor.getText() != notesLoaded; }
 
     juce::Label footer;
     juce::HyperlinkButton updateLink;

@@ -63,6 +63,11 @@ juce::var todoSetCompletedPayload (const juce::String& todoId, bool completed, j
     return object ({ { "todoId", todoId }, { "completed", completed }, { "changedAt", formatTime (changedAt) } });
 }
 
+juce::var notesSetPayload (const juce::String& text, const juce::String& baseText, juce::Time changedAt)
+{
+    return object ({ { "text", text }, { "baseText", baseText }, { "changedAt", formatTime (changedAt) } });
+}
+
 juce::var captureReadyPayload (const CaptureInfo& info)
 {
     return object ({ { "file", info.file },

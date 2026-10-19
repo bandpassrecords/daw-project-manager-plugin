@@ -5,6 +5,7 @@
 #include "CompanionState.h"
 #include "Outbox.h"
 #include "ProjectMatcher.h"
+#include "NotesBook.h"
 #include "TodoBook.h"
 
 #include <functional>
@@ -89,6 +90,24 @@ public:
 
     std::vector<TodoView> todos() const;
 
+    // --- Notes ------------------------------------------------------------------
+
+    /** The linked project's notes: the plugin's unconfirmed edit, else the app's. */
+    juce::String notes() const;
+
+    /** The app's notes for the linked project, ignoring the plugin's edits —
+        for noticing that they changed while the user was typing.
+    */
+    juce::String appNotes() const;
+
+    /** An edit of the linked project's notes is still waiting for the app. */
+    bool notesPending() const;
+
+    /** Saves an edit of the linked project's notes. False when nothing changed
+        or nothing is linked.
+    */
+    bool setNotes (const juce::String& text);
+
     /** Adds a to-do to the linked project, stamped with the playhead time when
         that option is on and a time is known. False when nothing was added.
     */
@@ -155,7 +174,8 @@ public:
     const BridgeFolder& folder() const { return bridge; }
 
 private:
-    protocol::Envelope envelope (const char* type, const protocol::ProjectRef& project, juce::Time at) const;
+    protocol::Envelope envelope (const char* type, const protocol::ProjectRef& project, juce::Time at,
+                                 const juce::String& messageId = {}) const;
     bool send (const protocol::Envelope& envelope, const juce::var& payload);
     void adoptIndexDetails();
 

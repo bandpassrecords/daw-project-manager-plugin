@@ -32,6 +32,9 @@ struct IndexedProject
     */
     std::vector<IndexedTodo> todos;
 
+    /** The notes the app shows for this project (a stack member's: its stack's). */
+    juce::String notes;
+
     /** The file name without folder or extension ("My Song" for
         "C:\Music\My Song.cpr"), read with either separator whatever the OS.
     */
@@ -60,6 +63,11 @@ struct ProjectIndex
     juce::String appVersion;
     std::optional<CompanionRelease> latestRelease;
     std::vector<IndexedProject> projects;
+
+    /** Ids of the plugin messages the app applied lately: how an edit learns
+        it arrived, whatever the app made of it.
+    */
+    juce::StringArray applied;
 
     const IndexedProject* find (const juce::String& profileId, const juce::String& id) const;
     const IndexedProject* find (const protocol::ProjectRef& ref) const { return find (ref.profileId, ref.id); }
