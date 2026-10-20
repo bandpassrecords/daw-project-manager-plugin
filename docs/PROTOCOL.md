@@ -244,7 +244,7 @@ overwrite the editor. The plugin offers "Reload" instead.
 ```
 
 A pre-listen recording of the project, 24-bit FLAC, `file` relative to the
-bridge folder. The app (`companion_bridge_service.dart`):
+bridge folder. The app (`plugin_bridge_service.dart`):
 
 1. copies it to `preview_songs/plugin/<project id>/`;
 2. makes it the project's preview song (the stack's, for a member), but only
