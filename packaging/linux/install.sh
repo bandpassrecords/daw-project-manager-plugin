@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs DPM Companion.
+# Installs the DAW Project Manager plug-in.
 #
 #   ./install.sh               for the current user: ~/.vst3
 #   sudo ./install.sh --system for everyone: /usr/local/lib/vst3
@@ -18,6 +18,7 @@ case "${1:-}" in
 esac
 
 mkdir -p "$DEST"
-rm -rf "$DEST/DPM Companion.vst3"
-cp -a "$HERE/DPM Companion.vst3" "$DEST/"
-echo "Installed to $DEST/DPM Companion.vst3. Rescan plug-ins in your DAW."
+# The old name too, from before the plug-in was renamed: hosts would list both.
+rm -rf "$DEST/DAW Project Manager.vst3" "$DEST/DPM Companion.vst3"
+cp -a "$HERE/DAW Project Manager.vst3" "$DEST/"
+echo "Installed to $DEST/DAW Project Manager.vst3. Rescan plug-ins in your DAW."

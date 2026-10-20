@@ -1,7 +1,7 @@
-# CLAUDE.md — DPM Companion
+# CLAUDE.md — DAW Project Manager plugin
 
 Instructions for AI assistants working on this codebase: the VST3/AU
-companion plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-manager)
+plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-manager)
 (issue #118). C++20, JUCE 9, CMake.
 
 ---
@@ -54,6 +54,17 @@ companion plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw
   "utilizador", "está a gravar".
 - Use the app's vocabulary for the same things (to-do = Aufgabe, tarea, tâche,
   attività, タスク, tarefa, задача, 待办事项).
+
+### The name
+- DAWs list the plugin as **DAW Project Manager** (by BandPass Records); its
+  downloads are "DAW Project Manager Plugin". It was called DPM Companion
+  until v0.1.x, and some internal names keep that on purpose: hosts find a
+  saved plugin by its codes (`Bnpr`/`Dpmc`) and the macOS bundle id, an
+  update finds its uninstaller in `{autopf}\DPM Companion`, and the app
+  accepts both names. Never change those. The CMake targets (`DPMCompanion_*`)
+  and the code's class names just weren't worth the churn.
+- The installers remove a `DPM Companion` bundle left from before, or the DAW
+  would list the plugin twice.
 
 ### New state fields
 - `CompanionState` is saved in the DAW project (`getStateInformation`). A new
@@ -108,7 +119,7 @@ Set `DPM_BRIDGE_DIR` to a scratch folder when running the plugin or pluginval,
 so nothing touches your real app library.
 
 ### Testing without a DAW: the Standalone and its test panel
-`-DDPM_BUILD_STANDALONE=ON` builds `DPM Companion.exe`/`.app`, with a **test
+`-DDPM_BUILD_STANDALONE=ON` builds `DAW Project Manager.exe`/`.app`, with a **test
 panel** (`src/ui/TestPanel.*`) that only the Standalone shows
 (`CompanionProcessor::isStandalone`): a pretend DAW.
 - **Transport:** Play/Stop, Rewind, Loop, and a test tone (`TestTransport`;
@@ -124,7 +135,7 @@ TRANS()**. Anything a user of the VST3/AU sees stays translated.
 
 ### Validating
 ```
-pluginval --strictness-level 10 --validate-in-process --validate "build/DPMCompanion_artefacts/Release/VST3/DPM Companion.vst3"
+pluginval --strictness-level 10 --validate-in-process --validate "build/DPMCompanion_artefacts/Release/VST3/DAW Project Manager.vst3"
 ```
 CI runs this on every platform, plus `auval` on macOS.
 

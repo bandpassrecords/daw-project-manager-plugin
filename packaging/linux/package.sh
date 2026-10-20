@@ -6,18 +6,18 @@ set -euo pipefail
 
 VERSION="$1"
 OUT="$2"
-VST3="build/DPMCompanion_artefacts/Release/VST3/DPM Companion.vst3"
+VST3="build/DPMCompanion_artefacts/Release/VST3/DAW Project Manager.vst3"
 
 mkdir -p "$OUT"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-DIR="$WORK/DPM Companion $VERSION"
+DIR="$WORK/DAW Project Manager Plugin $VERSION"
 mkdir -p "$DIR"
 cp -a "$VST3" "$DIR/"
 cp packaging/linux/INSTALL.txt "$DIR/INSTALL.txt"
 cp packaging/linux/install.sh "$DIR/install.sh"
 chmod +x "$DIR/install.sh"
 
-tar -C "$WORK" -czf "$OUT/DPM_Companion_Linux_x86_64_v$VERSION.tar.gz" "DPM Companion $VERSION"
+tar -C "$WORK" -czf "$OUT/DAW_Project_Manager_Plugin_Linux_x86_64_v$VERSION.tar.gz" "DAW Project Manager Plugin $VERSION"
 ls -la "$OUT"

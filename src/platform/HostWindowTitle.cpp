@@ -9,7 +9,8 @@ namespace dpm
 
 bool isOwnWindowTitle (const juce::String& title)
 {
-    return title.containsIgnoreCase ("DPM Companion");
+    // The plugin's own editor windows carry its name.
+    return title.containsIgnoreCase ("DAW Project Manager");
 }
 
 #if JUCE_WINDOWS

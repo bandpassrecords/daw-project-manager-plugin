@@ -202,7 +202,7 @@ std::optional<CompanionRelease> CompanionSession::availableUpdate (const juce::S
     const auto& release = *loadedIndex->latestRelease;
     if (! isNewerVersion (release.version, installedVersion))
         return std::nullopt;
-    if (! release.url.startsWith (releasesUrlPrefix))
+    if (! isReleasePageUrl (release.url))
         return std::nullopt;
     return release;
 }

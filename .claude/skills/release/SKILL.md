@@ -1,6 +1,6 @@
 ---
 name: release
-description: Cut a DPM Companion release end to end. Writes the changelog entry (which is the plugin's version), verifies the CI version gate, publishes the GitHub release (which creates the tag and starts release.yml), watches the pipeline, and if it fails deletes the release and tag, diagnoses, fixes, commits, pushes and tries again until every build is green. Use when the user says "release", "cut a release", "release 0.2.0", "ship vX.Y.Z", or "publish a new version".
+description: Cut a DAW Project Manager plugin release end to end. Writes the changelog entry (which is the plugin's version), verifies the CI version gate, publishes the GitHub release (which creates the tag and starts release.yml), watches the pipeline, and if it fails deletes the release and tag, diagnoses, fixes, commits, pushes and tries again until every build is green. Use when the user says "release", "cut a release", "release 0.2.0", "ship vX.Y.Z", or "publish a new version".
 argument-hint: "[X.Y.Z]"
 ---
 
@@ -16,7 +16,7 @@ GitHub release". Two checkpoints need the user, both at the start:
 Once the user has said go, keep going on your own through the pipeline,
 failures and retries, reporting as you go.
 
-**Repo:** `bandpassrecords/dpm-companion` — pass `-R` to every `gh` command.
+**Repo:** `bandpassrecords/daw-project-manager-plugin` — pass `-R` to every `gh` command.
 
 ## How releasing works here (read first)
 
@@ -40,7 +40,7 @@ failures and retries, reporting as you go.
 ## 1. Version and pre-flight
 
 - Version from `$ARGUMENTS` (strip a leading `v`), else: the newest remote tag
-  (`gh api repos/bandpassrecords/dpm-companion/git/matching-refs/tags/v --jq '.[].ref' | sort -V | tail -1`).
+  (`gh api repos/bandpassrecords/daw-project-manager-plugin/git/matching-refs/tags/v --jq '.[].ref' | sort -V | tail -1`).
   If the changelog's newest entry is ahead of it, that is the version being
   released; otherwise propose a bump and ask.
 - It must be `X.Y.Z`, higher than the newest tag, with no release or tag yet
@@ -66,14 +66,14 @@ failures and retries, reporting as you go.
 - Configure, build and run the whole suite (CLAUDE.md), and build the VST3:
   CMake reads the new version, so a typo in the entry fails here.
 - Commit as `Prepare release vX.Y.Z`, push, and confirm GitHub has it
-  (`gh api repos/bandpassrecords/dpm-companion/commits/main --jq .sha` equals
+  (`gh api repos/bandpassrecords/daw-project-manager-plugin/commits/main --jq .sha` equals
   `git rev-parse HEAD`).
 
 ## 4. Publish
 
 ```
-gh release create vX.Y.Z -R bandpassrecords/dpm-companion \
-  --target <sha of the pushed commit> --title "DPM Companion vX.Y.Z" --notes-file <notes file>
+gh release create vX.Y.Z -R bandpassrecords/daw-project-manager-plugin \
+  --target <sha of the pushed commit> --title "DAW Project Manager Plugin vX.Y.Z" --notes-file <notes file>
 ```
 
 Find the run it started (`gh run list --workflow release.yml --branch vX.Y.Z --limit 1`);

@@ -1,6 +1,7 @@
 language: Japanese
 countries: jp
 
+"by BandPass Records" = "BandPass Records 制作"
 "Project" = "プロジェクト"
 "Change..." = "変更..."
 "Link" = "リンク"

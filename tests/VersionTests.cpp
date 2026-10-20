@@ -50,7 +50,7 @@ namespace
         return session.availableUpdate (installed);
     }
 
-    constexpr const char* releaseUrl = "https://github.com/bandpassrecords/dpm-companion/releases/tag/v0.2.0";
+    constexpr const char* releaseUrl = "https://github.com/bandpassrecords/daw-project-manager-plugin/releases/tag/v0.2.0";
 }
 
 TEST_CASE ("The index can name the newest plugin release", "[version]")
@@ -80,6 +80,17 @@ TEST_CASE ("An update link anywhere but the plugin's release page is ignored", "
     CHECK_FALSE (updateFor (indexWithRelease ("0.2.0", "https://example.com/dpm-companion.exe"), "0.1.0").has_value());
     CHECK_FALSE (updateFor (indexWithRelease ("0.2.0", "https://github.com/someone-else/dpm-companion/releases"), "0.1.0").has_value());
     CHECK_FALSE (updateFor (indexWithRelease ("0.2.0", ""), "0.1.0").has_value());
+}
+
+TEST_CASE ("An app from before the repository's rename still offers the update", "[version]")
+{
+    const auto oldUrl = "https://github.com/bandpassrecords/dpm-companion/releases/tag/v0.2.0";
+    REQUIRE (updateFor (indexWithRelease ("0.2.0", oldUrl), "0.1.0").has_value());
+    CHECK (updateFor (indexWithRelease ("0.2.0", oldUrl), "0.1.0")->url == oldUrl);
+
+    CHECK (isReleasePageUrl ("https://github.com/bandpassrecords/daw-project-manager-plugin/releases"));
+    CHECK_FALSE (isReleasePageUrl ("https://github.com/bandpassrecords/daw-project-manager-plugin/releases-elsewhere"));
+    CHECK_FALSE (isReleasePageUrl ("https://github.com/bandpassrecords/daw-project-manager/releases/tag/v2.10.0"));
 }
 
 TEST_CASE ("No index, no update", "[version]")

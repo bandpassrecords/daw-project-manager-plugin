@@ -1,6 +1,7 @@
 language: Italian
 countries: it ch sm
 
+"by BandPass Records" = "di BandPass Records"
 "Project" = "Progetto"
 "Change..." = "Cambia..."
 "Link" = "Collega"

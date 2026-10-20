@@ -14,6 +14,12 @@ bool isNewerVersion (const juce::String& remote, const juce::String& local);
 /** Where the plugin's releases are published. An update link from the app
     is only ever opened when it points here.
 */
-inline constexpr const char* releasesUrlPrefix = "https://github.com/bandpassrecords/dpm-companion/releases";
+inline constexpr const char* releasesUrlPrefix = "https://github.com/bandpassrecords/daw-project-manager-plugin/releases";
+
+/** Whether `url` is on the plugin's releases page: today's, or the one the
+    repository had before it was renamed (dpm-companion), which apps from
+    before the rename still send and GitHub still redirects.
+*/
+bool isReleasePageUrl (const juce::String& url);
 
 } // namespace dpm

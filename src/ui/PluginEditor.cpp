@@ -76,8 +76,8 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     logo = createLogo();
     title.setText ("DAW Project Manager", juce::dontSendNotification);
     style (title, 16.0f, palette::text, true);
-    subtitle.setText ("COMPANION", juce::dontSendNotification);
-    style (subtitle, 11.0f, palette::accent, true);
+    subtitle.setText (TRANS ("by BandPass Records"), juce::dontSendNotification);
+    style (subtitle, 11.0f, palette::textTertiary);
     style (appStatus, 12.0f, palette::textSecondary);
     for (auto* c : { &title, &subtitle, &appStatus })
         addAndMakeVisible (c);

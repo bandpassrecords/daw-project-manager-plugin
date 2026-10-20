@@ -1,6 +1,7 @@
 language: French
 countries: fr be ca ch lu
 
+"by BandPass Records" = "par BandPass Records"
 "Project" = "Projet"
 "Change..." = "Changer..."
 "Link" = "Lier"

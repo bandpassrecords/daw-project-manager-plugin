@@ -1,10 +1,10 @@
-DPM Companion — manual install
+DAW Project Manager plug-in — manual install
 
 The .pkg installer next to this zip on the release page does this for you,
 for all users or for you only. To install by hand, copy:
 
-  DPM Companion.vst3       ->  /Library/Audio/Plug-Ins/VST3/
-  DPM Companion.component  ->  /Library/Audio/Plug-Ins/Components/
+  DAW Project Manager.vst3       ->  /Library/Audio/Plug-Ins/VST3/
+  DAW Project Manager.component  ->  /Library/Audio/Plug-Ins/Components/
 
 (or the same folders under ~/Library for your user only), then rescan
 plug-ins in your DAW.

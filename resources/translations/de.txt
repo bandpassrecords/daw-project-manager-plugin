@@ -1,6 +1,7 @@
 language: German
 countries: de at ch li lu
 
+"by BandPass Records" = "von BandPass Records"
 "Project" = "Projekt"
 "Change..." = "Ändern..."
 "Link" = "Verknüpfen"

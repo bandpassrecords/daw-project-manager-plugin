@@ -1,6 +1,7 @@
 language: Russian
 countries: ru by kz
 
+"by BandPass Records" = "от BandPass Records"
 "Project" = "Проект"
 "Change..." = "Изменить..."
 "Link" = "Связать"

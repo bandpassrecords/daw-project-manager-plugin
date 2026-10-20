@@ -1,6 +1,6 @@
 # App ↔ plugin protocol
 
-The DAW Project Manager app and the DPM Companion plugin never talk directly.
+The DAW Project Manager app and its DAW plugin never talk directly.
 They exchange files in one shared folder, the **bridge folder**:
 
 - the app tells the plugin what it knows (projects and their to-dos);
@@ -114,7 +114,7 @@ learns they arrived, see [Acknowledgement](#acknowledgement)).
   in the last 30 minutes, whatever came of them. A notes edit is confirmed by
   its id appearing here.
 - `companion` (optional) names the newest plugin release:
-  `{ "latestVersion": "0.2.0", "releaseUrl": "https://github.com/bandpassrecords/dpm-companion/releases/tag/v0.2.0" }`.
+  `{ "latestVersion": "0.2.0", "releaseUrl": "https://github.com/bandpassrecords/daw-project-manager-plugin/releases/tag/v0.2.0" }`.
   The app looks it up on GitHub (the plugin itself never goes on the network)
   at most once a day, only when the user's update checks are on and only in
   builds where the app checks its own updates. It leaves the field out
@@ -297,7 +297,7 @@ in Settings > DAW plugin):
   the machine went to sleep.
 - A session the DAW ended is never ended silently. The app shows its summary
   (project, start–end, length) and why it ended: "{host.name} closed the
-  project" after a goodbye, or "DPM Companion stopped responding…" after a
+  project" after a goodbye, or "The DAW Project Manager plugin stopped responding…" after a
   stale heartbeat. It shows a dialog, plus a notification when the app window
   isn't in front.
 - All times are converted to local time on arrival. Kept as UTC, they would

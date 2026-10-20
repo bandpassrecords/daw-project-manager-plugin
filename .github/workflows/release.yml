@@ -189,13 +189,13 @@ jobs:
             *)       PV="xvfb-run -a pluginval/pluginval" ;;
           esac
           $PV --strictness-level 10 --validate-in-process --timeout-ms 900000 \
-            --validate "build/DPMCompanion_artefacts/Release/VST3/DPM Companion.vst3"
+            --validate "build/DPMCompanion_artefacts/Release/VST3/DAW Project Manager.vst3"
 
       - name: Validate AU with auval (macOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p ~/Library/Audio/Plug-Ins/Components
-          cp -R "build/DPMCompanion_artefacts/Release/AU/DPM Companion.component" ~/Library/Audio/Plug-Ins/Components/
+          cp -R "build/DPMCompanion_artefacts/Release/AU/DAW Project Manager.component" ~/Library/Audio/Plug-Ins/Components/
           killall -9 AudioComponentRegistrar || true
           auval -v aufx Dpmc Bnpr
 
@@ -230,9 +230,9 @@ jobs:
           choco install innosetup --no-progress -y
           iscc packaging/windows/installer.iss
           New-Item -ItemType Directory -Force dist | Out-Null
-          Move-Item Output/DPM_Companion_Installer_v$env:APP_VERSION.exe dist/
-          $zip = "dist/DPM_Companion_Windows_VST3_v$env:APP_VERSION.zip"
-          Compress-Archive -Path "build/DPMCompanion_artefacts/Release/VST3/DPM Companion.vst3" -DestinationPath $zip
+          Move-Item Output/DAW_Project_Manager_Plugin_Installer_v$env:APP_VERSION.exe dist/
+          $zip = "dist/DAW_Project_Manager_Plugin_Windows_VST3_v$env:APP_VERSION.zip"
+          Compress-Archive -Path "build/DPMCompanion_artefacts/Release/VST3/DAW Project Manager.vst3" -DestinationPath $zip
 
       - name: Package (Linux)
         if: runner.os == 'Linux'
@@ -274,7 +274,7 @@ jobs:
         if: "!startsWith(github.ref, 'refs/tags/v')"
         uses: actions/upload-artifact@v4
         with:
-          name: DPM_Companion_${{ runner.os }}_${{ steps.version.outputs.ref_name }}
+          name: DAW_Project_Manager_Plugin_${{ runner.os }}_${{ steps.version.outputs.ref_name }}
           path: dist/
           retention-days: 7
 
@@ -283,6 +283,6 @@ jobs:
         if: "!startsWith(github.ref, 'refs/tags/v')"
         uses: actions/upload-artifact@v4
         with:
-          name: DPM_Companion_Standalone_${{ runner.os }}_${{ steps.version.outputs.ref_name }}
+          name: DAW_Project_Manager_Plugin_Standalone_${{ runner.os }}_${{ steps.version.outputs.ref_name }}
           path: build/DPMCompanion_artefacts/Release/Standalone/
           retention-days: 7

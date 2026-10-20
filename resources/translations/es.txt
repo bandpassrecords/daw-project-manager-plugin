@@ -1,6 +1,7 @@
 language: Spanish
 countries: es mx ar co cl pe ve
 
+"by BandPass Records" = "por BandPass Records"
 "Project" = "Proyecto"
 "Change..." = "Cambiar..."
 "Link" = "Vincular"

@@ -1,6 +1,7 @@
 language: Portuguese (Brazil)
 countries: br
 
+"by BandPass Records" = "por BandPass Records"
 "Project" = "Projeto"
 "Change..." = "Alterar..."
 "Link" = "Vincular"

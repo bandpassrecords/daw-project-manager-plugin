@@ -1,6 +1,7 @@
 language: Chinese (Simplified)
 countries: cn sg
 
+"by BandPass Records" = "BandPass Records 出品"
 "Project" = "项目"
 "Change..." = "更改..."
 "Link" = "关联"

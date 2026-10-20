@@ -1,6 +1,8 @@
-# DPM Companion
+# DAW Project Manager plugin
 
-The DAW plugin for [DAW Project Manager](https://github.com/bandpassrecords/daw-project-manager).
+The DAW plugin for [DAW Project Manager](https://github.com/bandpassrecords/daw-project-manager),
+by BandPass Records. It shows up in your DAW as **DAW Project Manager**
+(until v0.1.x it was called DPM Companion).
 Put it on your master bus and it:
 
 - **records a pre-listen of the project while you work.** Each playback pass
@@ -30,22 +32,24 @@ in the outbox, or in the DAW project itself, until the app runs.
 
 ## Install
 
-Download from the [releases](https://github.com/bandpassrecords/dpm-companion/releases):
+Download from the [releases](https://github.com/bandpassrecords/daw-project-manager-plugin/releases):
 
 | | |
 |---|---|
-| Windows | `DPM_Companion_Installer_vX.Y.Z.exe`: for all users (`C:\Program Files\Common Files\VST3`) or just you (`%LOCALAPPDATA%\Programs\Common\VST3`, no admin rights), or any folder you pick. Or use the `.zip` |
-| macOS | `DPM_Companion_macOS_Installer_vX.Y.Z.pkg` (VST3 + AU), for all users (`/Library/Audio/Plug-Ins`) or just you (`~/Library/Audio/Plug-Ins`). Or use the `.zip` |
-| Linux | `DPM_Companion_Linux_x86_64_vX.Y.Z.tar.gz`, then `./install.sh` (`~/.vst3`), `sudo ./install.sh --system`, or `./install.sh <folder>` |
+| Windows | `DAW_Project_Manager_Plugin_Installer_vX.Y.Z.exe`: for all users (`C:\Program Files\Common Files\VST3`) or just you (`%LOCALAPPDATA%\Programs\Common\VST3`, no admin rights), or any folder you pick. Or use the `.zip` |
+| macOS | `DAW_Project_Manager_Plugin_macOS_Installer_vX.Y.Z.pkg` (VST3 + AU), for all users (`/Library/Audio/Plug-Ins`) or just you (`~/Library/Audio/Plug-Ins`). Or use the `.zip` |
+| Linux | `DAW_Project_Manager_Plugin_Linux_x86_64_vX.Y.Z.tar.gz`, then `./install.sh` (`~/.vst3`), `sudo ./install.sh --system`, or `./install.sh <folder>` |
 
 The installers start on the standard plug-in folders, which every DAW scans.
-If you pick another folder, add it to your DAW's plug-in folders.
+If you pick another folder, add it to your DAW's plug-in folders. Updating
+from DPM Companion removes the old copy, so the DAW doesn't list it twice;
+projects that use it keep working.
 
 Each file has a `.sha256` next to it.
 
 ## Using it
 
-1. Insert **DPM Companion** on the master bus.
+1. Insert **DAW Project Manager** on the master bus.
 2. Check the **Project** card. It should name your project; if not, press
    **Change…** and pick it.
 3. **Pre-listen capture**:
