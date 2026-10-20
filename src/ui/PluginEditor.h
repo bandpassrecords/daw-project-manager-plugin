@@ -49,6 +49,7 @@ private:
     CompanionLookAndFeel lookAndFeel;
     juce::TooltipWindow tooltips { this, 600 };
 
+    std::unique_ptr<juce::Drawable> logo;
     juce::Label title, subtitle, appStatus;
 
     juce::Label projectHeading, projectName, projectPath, relinkHint;
@@ -84,7 +85,9 @@ private:
     std::unique_ptr<TestPanel> testPanel;   // Standalone only
 
     bool appConnected = false;
-    juce::Rectangle<int> projectCard, captureCard, todoCard;
+    bool projectLinked = false;
+    bool recordingShown = false;
+    juce::Rectangle<int> stripe, logoArea, statusPill, projectCard, captureCard, todoCard, tabsRow;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CompanionEditor)
 };

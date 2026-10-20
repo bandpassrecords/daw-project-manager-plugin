@@ -25,16 +25,15 @@ ProjectPicker::ProjectPicker()
     addAndMakeVisible (list);
 
     pickButton.setButtonText (TRANS ("Link"));
+    makePrimary (pickButton);
     pickButton.onClick = [this] { pickRow (list.getSelectedRow()); };
     addAndMakeVisible (pickButton);
 
     unlinkButton.setButtonText (TRANS ("Unlink"));
-    unlinkButton.setColour (juce::TextButton::buttonColourId, palette::divider);
     unlinkButton.onClick = [this] { if (onUnlink) onUnlink(); };
     addAndMakeVisible (unlinkButton);
 
     closeButton.setButtonText (TRANS ("Cancel"));
-    closeButton.setColour (juce::TextButton::buttonColourId, palette::divider);
     closeButton.onClick = [this] { if (onClose) onClose(); };
     addAndMakeVisible (closeButton);
 
@@ -119,8 +118,11 @@ void ProjectPicker::paintListBoxItem (int row, juce::Graphics& g, int width, int
 
     if (selected)
     {
-        g.setColour (palette::primary.withAlpha (0.45f));
-        g.fillRoundedRectangle (juce::Rectangle<float> (0, 1, (float) width, (float) height - 2), 6.0f);
+        const juce::Rectangle<float> rowArea (0, 1, (float) width, (float) height - 2);
+        g.setColour (palette::selection);
+        g.fillRoundedRectangle (rowArea, 6.0f);
+        g.setColour (palette::accent);
+        g.fillRoundedRectangle (rowArea.withWidth (3.0f).reduced (0, 8), 1.5f);
     }
 
     auto area = juce::Rectangle<int> (10, 4, width - 20, height - 8);

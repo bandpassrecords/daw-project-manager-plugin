@@ -146,4 +146,22 @@ juce::String stampWithTime (const juce::String& text, double playheadSeconds)
     return "[" + formatClock (playheadSeconds) + "] " + text;
 }
 
+StampedText splitTimeStamp (const juce::String& text)
+{
+    const auto close = text.indexOfChar (']');
+    if (! text.startsWithChar ('[') || close < 0 || text[close + 1] != ' ')
+        return { {}, text };
+
+    const auto time = text.substring (1, close);
+    const auto parts = juce::StringArray::fromTokens (time, ":", {});
+    const auto isTwoDigits = [] (const juce::String& p) { return p.length() == 2 && p.containsOnly ("0123456789"); };
+    const auto rest = text.substring (close + 2);
+
+    if ((parts.size() != 2 && parts.size() != 3) || ! std::all_of (parts.begin(), parts.end(), isTwoDigits)
+        || rest.trim().isEmpty())
+        return { {}, text };
+
+    return { time, rest };
+}
+
 } // namespace dpm

@@ -38,6 +38,9 @@ DisableProgramGroupPage=yes
 ; The uninstaller stays out of the VST3 folder hosts scan.
 UninstallFilesDir={autopf}\DPM Companion
 UninstallDisplayName=DPM Companion (VST3)
+; The app's own icon (app_icon.ico in daw-project-manager).
+SetupIconFile=icon.ico
+UninstallDisplayIcon={uninstallexe}
 ; All users by default; "Install for me only" needs no admin rights.
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=dialog commandline

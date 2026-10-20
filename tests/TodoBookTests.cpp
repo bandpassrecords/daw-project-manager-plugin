@@ -169,3 +169,22 @@ TEST_CASE ("The playhead stamp matches the app's timestamped to-dos", "[todos]")
     CHECK (formatClock (-5.0) == "00:00");
     CHECK (formatClock (59.999) == "00:59");
 }
+
+TEST_CASE ("A stamped to-do splits into its time and its text", "[todos]")
+{
+    const auto stamped = splitTimeStamp (stampWithTime ("Fix the kick", 83.9));
+    CHECK (stamped.time == "01:23");
+    CHECK (stamped.text == "Fix the kick");
+
+    const auto long_ = splitTimeStamp ("[01:02:03] Outro");
+    CHECK (long_.time == "01:02:03");
+    CHECK (long_.text == "Outro");
+
+    // Anything that isn't the app's stamp stays text.
+    for (const auto* plain : { "Fix the kick", "[1:23] Fix", "[01:23]Fix", "[ab:cd] Fix", "[01:23] ", "Fix [01:23] it" })
+    {
+        const auto split = splitTimeStamp (plain);
+        CHECK (split.time.isEmpty());
+        CHECK (split.text == plain);
+    }
+}

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- The DAW Project Manager mark, traced from the app's app_icon.png:
+       orange, grey and navy bands, each seam a darker shade of its band. -->
+  <defs>
+    <clipPath id="tile">
+      <rect x="0" y="0" width="100" height="100" rx="29" ry="29"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect x="0" y="0" width="100" height="100" fill="#7b7b7b"/>
+    <polygon points="0,0 100.4,0 0,67.2" fill="#af4708"/>
+    <polygon points="0,0 90.1,0 0,60" fill="#ff6100"/>
+    <polygon points="30,100 100,0 110,0 110,100" fill="#15283c"/>
+    <polygon points="37.2,100 107.5,0 110,0 110,100" fill="#123153"/>
+  </g>
+</svg>

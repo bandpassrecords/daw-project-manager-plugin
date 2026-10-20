@@ -56,6 +56,18 @@ juce::String stampWithTime (const juce::String& text, double playheadSeconds);
 /** "02:31", or "01:02:31" past an hour (formatPlaybackTimestamp in the app). */
 juce::String formatClock (double seconds);
 
+/** A to-do's text with its playhead stamp taken off, so the list can show
+    the time apart. A text without the app's "[MM:SS] " or "[HH:MM:SS] "
+    in front has no time and comes back whole.
+*/
+struct StampedText
+{
+    juce::String time;
+    juce::String text;
+};
+
+StampedText splitTimeStamp (const juce::String& text);
+
 /** Longest to-do text the plugin sends. */
 inline constexpr int maxTodoLength = 500;
 

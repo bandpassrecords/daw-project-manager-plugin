@@ -104,6 +104,7 @@ juce_add_plugin(DPMCompanion
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS TRUE
+    ICON_BIG resources/brand/icon.png
     VST3_CATEGORIES Fx Analyzer
     AU_MAIN_TYPE kAudioUnitType_Effect
     COPY_PLUGIN_AFTER_BUILD FALSE)
@@ -112,6 +113,7 @@ juce_add_binary_data(DPMCompanionData
     HEADER_NAME DPMBinaryData.h
     NAMESPACE DPMBinaryData
     SOURCES
+        resources/brand/logo.svg
         resources/translations/de.txt
         resources/translations/es.txt
         resources/translations/fr.txt

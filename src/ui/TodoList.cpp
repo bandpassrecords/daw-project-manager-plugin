@@ -10,8 +10,11 @@ namespace dpm
 TodoList::TodoList()
 {
     list.setModel (this);
-    list.setRowHeight (30);
+    list.setRowHeight (32);
     list.setOutlineThickness (0);
+    // The row under the mouse is the "selected" one: it lights up, so it
+    // shows which to-do a click ticks off.
+    list.setMouseMoveSelectsRows (true);
     addAndMakeVisible (list);
 }
 
@@ -64,25 +67,30 @@ int TodoList::getNumRows()
     return (int) todos.size();
 }
 
-void TodoList::paintListBoxItem (int row, juce::Graphics& g, int width, int height, bool)
+void TodoList::paintListBoxItem (int row, juce::Graphics& g, int width, int height, bool hovered)
 {
     if (row < 0 || row >= (int) todos.size())
         return;
 
     const auto& todo = todos[(size_t) row];
 
-    if (row > 0)
+    if (hovered)
+    {
+        g.setColour (palette::text.withAlpha (0.05f));
+        g.fillRoundedRectangle (juce::Rectangle<float> (0, 1, (float) width, (float) height - 2), 6.0f);
+    }
+    else if (row > 0)
     {
         g.setColour (palette::divider.withAlpha (0.5f));
         g.fillRect (0, 0, width, 1);
     }
 
     const auto boxSize = 16;
-    const juce::Rectangle<float> box (4.0f, (float) (height - boxSize) * 0.5f, (float) boxSize, (float) boxSize);
+    const juce::Rectangle<float> box (8.0f, (float) (height - boxSize) * 0.5f, (float) boxSize, (float) boxSize);
 
     if (todo.completed)
     {
-        g.setColour (palette::primary.brighter (0.1f));
+        g.setColour (palette::accent.withAlpha (0.55f));
         g.fillRoundedRectangle (box, 4.0f);
         juce::Path tick;
         tick.startNewSubPath (box.getX() + 3.5f, box.getCentreY());
@@ -93,11 +101,11 @@ void TodoList::paintListBoxItem (int row, juce::Graphics& g, int width, int heig
     }
     else
     {
-        g.setColour (palette::textSecondary);
+        g.setColour (hovered ? palette::accent : palette::textSecondary);
         g.drawRoundedRectangle (box, 4.0f, 1.5f);
     }
 
-    auto textArea = juce::Rectangle<int> (boxSize + 14, 0, width - boxSize - 18, height);
+    auto textArea = juce::Rectangle<int> (boxSize + 18, 0, width - boxSize - 24, height);
 
     if (todo.pending)
     {
@@ -110,18 +118,34 @@ void TodoList::paintListBoxItem (int row, juce::Graphics& g, int width, int heig
         textArea.removeFromRight (4);
     }
 
+    // A to-do stamped with the playhead time shows the time as a chip.
+    const auto stamped = splitTimeStamp (todo.text);
+    if (stamped.time.isNotEmpty())
+    {
+        const auto chipFont = juce::FontOptions (11.5f, juce::Font::bold);
+        const auto chipWidth = (int) juce::GlyphArrangement::getStringWidth (juce::Font (chipFont), stamped.time) + 12;
+        const auto chip = textArea.removeFromLeft (chipWidth).withSizeKeepingCentre (chipWidth, 18);
+        const auto alpha = todo.completed ? 0.5f : 1.0f;
+        g.setColour (palette::selection.withMultipliedAlpha (alpha));
+        g.fillRoundedRectangle (chip.toFloat(), 5.0f);
+        g.setColour (palette::text.withAlpha (0.85f * alpha));
+        g.setFont (chipFont);
+        g.drawText (stamped.time, chip, juce::Justification::centred);
+        textArea.removeFromLeft (8);
+    }
+
     auto font = juce::FontOptions (14.0f);
     if (todo.pending)
         font = font.withStyle ("Italic");
 
     g.setFont (font);
     g.setColour (todo.completed ? palette::textTertiary : palette::text);
-    g.drawText (todo.text, textArea, juce::Justification::centredLeft, true);
+    g.drawText (stamped.text, textArea, juce::Justification::centredLeft, true);
 
     if (todo.completed)
     {
         const auto textWidth = juce::jmin ((float) textArea.getWidth(),
-                                           juce::GlyphArrangement::getStringWidth (juce::Font (font), todo.text));
+                                           juce::GlyphArrangement::getStringWidth (juce::Font (font), stamped.text));
         g.drawLine ((float) textArea.getX(), (float) height * 0.5f, (float) textArea.getX() + textWidth,
                     (float) height * 0.5f, 1.0f);
     }

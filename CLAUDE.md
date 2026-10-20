@@ -87,7 +87,11 @@ companion plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw
   hello — a host's plug-in scan — never says goodbye.
 - Stamped to-dos use the app's own format, `[MM:SS] text`
   (`playback_todo_utils.dart`). Keep them identical.
-- UI colours are the app's Classic Dark (`palette` in `CompanionLookAndFeel.h`).
+- UI colours are the app's Classic Dark (`palette` in `CompanionLookAndFeel.h`),
+  with the app icon's colours (`brand`) for accents: orange for the one main
+  action of a section (`makePrimary`), navy for selection. The mark itself is
+  `resources/brand/logo.svg`; `icon.png` and the installer's `icon.ico` are
+  the app's own icon.
 
 ---
 
@@ -154,6 +158,7 @@ CI runs this on every platform, plus `auval` on macOS.
 | Host window title (Windows, macOS) | `src/platform/HostWindowTitle*` |
 | Processor, timer glue | `src/plugin/` |
 | Editor, picker, to-do list, look | `src/ui/` |
+| Logo, icon | `resources/brand/` |
 | Translations | `resources/translations/` |
 | Installers | `packaging/` |
 | CI and release | `.github/workflows/release.yml` |

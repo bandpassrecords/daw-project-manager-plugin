@@ -1,5 +1,7 @@
 #include "PluginEditor.h"
 
+#include <algorithm>
+
 namespace dpm
 {
 
@@ -30,7 +32,7 @@ void LevelMeter::paint (juce::Graphics& g)
     g.fillRoundedRectangle (bounds, bounds.getHeight() * 0.5f);
 
     const auto fill = bounds.withWidth (bounds.getWidth() * juce::jlimit (0.0f, 1.0f, level));
-    g.setColour (recording ? palette::recording : palette::primary.brighter (0.5f));
+    g.setColour (recording ? palette::recording : brand::grey.brighter (0.4f));
     g.fillRoundedRectangle (fill, bounds.getHeight() * 0.5f);
 }
 
@@ -43,12 +45,18 @@ namespace
         label.setFont (juce::FontOptions (size, bold ? juce::Font::bold : juce::Font::plain));
         label.setColour (juce::Label::textColourId, colour);
         label.setMinimumHorizontalScale (1.0f);
+        label.setBorderSize ({});
     }
 
     void heading (juce::Label& label, const juce::String& text)
     {
         label.setText (text.toUpperCase(), juce::dontSendNotification);
         style (label, 12.0f, palette::textTertiary, true);
+    }
+
+    int textWidth (const juce::String& text, const juce::Font& font)
+    {
+        return (int) std::ceil (juce::GlyphArrangement::getStringWidth (font, text));
     }
 
     juce::String lengthText (int seconds)
@@ -65,12 +73,12 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
 {
     setLookAndFeel (&lookAndFeel);
 
+    logo = createLogo();
     title.setText ("DAW Project Manager", juce::dontSendNotification);
-    style (title, 18.0f, palette::text, true);
-    subtitle.setText ("Companion", juce::dontSendNotification);
-    style (subtitle, 13.0f, palette::textTertiary);
+    style (title, 16.0f, palette::text, true);
+    subtitle.setText ("COMPANION", juce::dontSendNotification);
+    style (subtitle, 11.0f, palette::accent, true);
     style (appStatus, 12.0f, palette::textSecondary);
-    appStatus.setJustificationType (juce::Justification::centredRight);
     for (auto* c : { &title, &subtitle, &appStatus })
         addAndMakeVisible (c);
 
@@ -83,6 +91,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     changeProjectButton.setButtonText (TRANS ("Change..."));
     changeProjectButton.onClick = [this] { showPicker (true); };
     relinkButton.setButtonText (TRANS ("Link"));
+    makePrimary (relinkButton);
     relinkButton.onClick = [this]
     {
         processor.bridge().withSession ([this] (CompanionSession& s)
@@ -127,6 +136,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     };
 
     recordButton.setClickingTogglesState (false);
+    recordButton.setColour (juce::TextButton::textColourOffId, palette::recording.brighter (0.4f));
     recordButton.onClick = [this]
     {
         auto& engine = processor.capture();
@@ -145,7 +155,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     {
         tab->setClickingTogglesState (false);
         tab->setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
-        tab->setColour (juce::TextButton::buttonOnColourId, palette::primary);
+        tab->setColour (juce::TextButton::buttonOnColourId, juce::Colours::transparentBlack);
         tab->setColour (juce::TextButton::textColourOffId, palette::textTertiary);
         tab->setColour (juce::TextButton::textColourOnId, palette::text);
         addAndMakeVisible (*tab);
@@ -163,9 +173,9 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     notesEditor.setTextToShowWhenEmpty (TRANS ("Write notes for this project..."), palette::textTertiary);
     notesEditor.onTextChange = [this] { refreshNotesStatus(); };
     saveNotesButton.setButtonText (TRANS ("Save"));
+    makePrimary (saveNotesButton);
     saveNotesButton.onClick = [this] { saveNotes(); };
     reloadNotesButton.setButtonText (TRANS ("Reload"));
-    reloadNotesButton.setColour (juce::TextButton::buttonColourId, palette::divider);
     reloadNotesButton.onClick = [this]
     {
         notesLoaded = processor.bridge().withSession ([] (CompanionSession& s) { return s.notes(); });
@@ -185,6 +195,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     todoInput.setInputRestrictions (maxTodoLength);
     todoInput.onReturnKey = [this] { addTodo(); };
     addTodoButton.setButtonText (TRANS ("Add"));
+    makePrimary (addTodoButton);
     addTodoButton.onClick = [this] { addTodo(); };
     stampToggle.setButtonText (TRANS ("Stamp with playhead time"));
     stampToggle.onClick = [this]
@@ -242,8 +253,8 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
         addAndMakeVisible (*testPanel);
     }
 
-    setResizeLimits (420, 520 + testHeight, 1000, 1200 + testHeight);
-    setSize (480, 620 + testHeight);
+    setResizeLimits (420, 540 + testHeight, 1000, 1200 + testHeight);
+    setSize (480, 660 + testHeight);
 
     showNotes (false);
     refreshFromSession();
@@ -331,6 +342,19 @@ void CompanionEditor::refreshFromSession()
         projectPath.setTooltip ({});
     }
 
+    // Unlinked, choosing a project is the one thing to do: it gets the accent.
+    projectLinked = snap.linked;
+    changeProjectButton.setButtonText (snap.linked ? TRANS ("Change...") : TRANS ("Choose project"));
+    if (snap.linked)
+    {
+        changeProjectButton.removeColour (juce::TextButton::buttonColourId);
+        changeProjectButton.removeColour (juce::TextButton::textColourOffId);
+    }
+    else
+    {
+        makePrimary (changeProjectButton);
+    }
+
     relinkTarget = snap.relinkRef;
     relinkHint.setText (snap.relinkName.isEmpty() ? juce::String()
                                                   : TRANS ("This looks like {name}.").replace ("{name}", snap.relinkName),
@@ -344,6 +368,9 @@ void CompanionEditor::refreshFromSession()
                            juce::dontSendNotification);
     lengthBox.setSelectedId (snap.state.capture.maxSeconds, juce::dontSendNotification);
     stampToggle.setToggleState (snap.state.stampTodosWithTime, juce::dontSendNotification);
+
+    const auto open = std::count_if (snap.todos.begin(), snap.todos.end(), [] (const TodoView& t) { return ! t.completed; });
+    todosTab.setButtonText (TRANS ("To-dos").toUpperCase() + (open > 0 ? "  " + juce::String (open) : juce::String()));
 
     todoList.setTodos (snap.todos);
     todoList.setEmptyText (snap.linked ? TRANS ("No to-dos yet.") : TRANS ("Link a project to see its to-dos."));
@@ -381,11 +408,21 @@ void CompanionEditor::refreshCaptureStatus()
     const auto& mode = settings.capture.mode;
     const auto recording = engine.isRecording();
 
-    recordButton.setEnabled (mode == CaptureMode::manual);
+    // Record only means something in manual mode; elsewhere it isn't shown.
+    if (recordButton.isVisible() != (mode == CaptureMode::manual))
+    {
+        recordButton.setVisible (mode == CaptureMode::manual);
+        resized();
+    }
     recordButton.setButtonText (engine.isManualTake() ? TRANS ("Stop") : TRANS ("Record"));
     recordButton.setToggleState (engine.isManualTake(), juce::dontSendNotification);
     lengthBox.setEnabled (mode != CaptureMode::off);
     meter.setRecording (recording);
+
+    // The pulsing dot by the heading.
+    if (recording || recordingShown)
+        repaint (captureCard);
+    recordingShown = recording;
 
     juce::String status;
     auto colour = palette::textSecondary;
@@ -466,6 +503,7 @@ void CompanionEditor::showNotes (bool notes)
     for (auto* c : std::initializer_list<juce::Component*> { &notesEditor, &saveNotesButton, &notesStatus })
         c->setVisible (notes);
     refreshNotesStatus();
+    repaint (tabsRow);
 }
 
 void CompanionEditor::refreshNotesStatus()
@@ -516,15 +554,39 @@ void CompanionEditor::addTodo()
 void CompanionEditor::paint (juce::Graphics& g)
 {
     g.fillAll (palette::background);
+    drawBrandStripe (g, stripe.toFloat());
+
+    if (logo != nullptr)
+        logo->drawWithin (g, logoArea.toFloat(), juce::RectanglePlacement::centred, 1.0f);
+
+    // Whether the app is there: a dot in a tinted pill.
+    const auto statusColour = appConnected ? palette::connected : palette::warning;
+    const auto pill = statusPill.toFloat();
+    g.setColour (statusColour.withAlpha (0.14f));
+    g.fillRoundedRectangle (pill, pill.getHeight() * 0.5f);
+    g.setColour (statusColour);
+    g.fillEllipse (pill.getX() + 10.0f, pill.getCentreY() - 3.5f, 7.0f, 7.0f);
+
     drawCard (g, projectCard);
     drawCard (g, captureCard);
     drawCard (g, todoCard);
 
-    // The connection dot left of the status text.
-    const auto textWidth = juce::GlyphArrangement::getStringWidth (appStatus.getFont(), appStatus.getText());
-    const auto dotX = (float) appStatus.getRight() - textWidth - 18.0f;
-    g.setColour (appConnected ? palette::connected : palette::warning);
-    g.fillEllipse (dotX, (float) appStatus.getBounds().getCentreY() - 4.0f, 8.0f, 8.0f);
+    // While a take records, a red dot pulses at the end of the heading.
+    if (processor.capture().isRecording())
+    {
+        const auto phase = (float) (juce::Time::getMillisecondCounter() % 1200) / 1200.0f;
+        const auto alpha = 0.55f + 0.45f * std::cos (phase * juce::MathConstants<float>::twoPi);
+        const auto row = captureHeading.getBounds().toFloat();
+        g.setColour (palette::recording.withAlpha (alpha));
+        g.fillEllipse (row.getRight() - 10.0f, row.getCentreY() - 5.0f, 10.0f, 10.0f);
+    }
+
+    // Tabs: a rule under the row, the brand's orange under the open one.
+    g.setColour (palette::divider);
+    g.fillRect (tabsRow.withTop (tabsRow.getBottom() - 1));
+    const auto& openTab = showingNotes ? notesTab : todosTab;
+    g.setColour (palette::accent);
+    g.fillRoundedRectangle (openTab.getBounds().withTop (tabsRow.getBottom() - 2).withHeight (2).toFloat(), 1.0f);
 }
 
 void CompanionEditor::resized()
@@ -532,40 +594,46 @@ void CompanionEditor::resized()
     auto bounds = getLocalBounds();
     if (testPanel != nullptr)
         testPanel->setBounds (bounds.removeFromTop (TestPanel::preferredHeight));
+    stripe = bounds.removeFromTop (4);
     auto area = bounds.reduced (16);
 
-    auto header = area.removeFromTop (30);
-    const auto statusWidth = (int) juce::GlyphArrangement::getStringWidth (appStatus.getFont(), appStatus.getText()) + 30;
-    appStatus.setBounds (header.removeFromRight (statusWidth));
-    const auto titleWidth = (int) juce::GlyphArrangement::getStringWidth (title.getFont(), title.getText()) + 12;
-    title.setBounds (header.removeFromLeft (juce::jmin (header.getWidth(), titleWidth)));
+    // Header: the mark, the name, and whether the app is there.
+    auto header = area.removeFromTop (36);
+    const auto pillWidth = textWidth (appStatus.getText(), appStatus.getFont()) + 34;
+    statusPill = header.removeFromRight (pillWidth).withSizeKeepingCentre (pillWidth, 24);
+    appStatus.setBounds (statusPill.withTrimmedLeft (24).withTrimmedRight (8));
+    header.removeFromRight (8);
+    logoArea = header.removeFromLeft (34).withSizeKeepingCentre (34, 34);
+    header.removeFromLeft (10);
+    header = header.withSizeKeepingCentre (header.getWidth(), 34);
+    title.setBounds (header.removeFromTop (20));
     subtitle.setBounds (header);
-    area.removeFromTop (10);
+    area.removeFromTop (12);
 
     auto footerRow = area.removeFromBottom (16);
     if (updateLink.isVisible())
     {
-        const auto linkWidth = (int) juce::GlyphArrangement::getStringWidth (
-                                   juce::Font (juce::FontOptions (11.0f, juce::Font::bold)), updateLink.getButtonText()) + 8;
+        const auto linkWidth = textWidth (updateLink.getButtonText(), juce::Font (juce::FontOptions (11.0f, juce::Font::bold))) + 8;
         updateLink.setBounds (footerRow.removeFromRight (linkWidth));
     }
     footer.setBounds (footerRow);
     area.removeFromBottom (6);
 
-    // Project card
+    // Project card. Unlinked, the explanation gets two lines.
     const auto hasHint = relinkHint.isVisible();
-    projectCard = area.removeFromTop (hasHint ? 128 : 96);
+    projectCard = area.removeFromTop ((projectLinked ? 92 : 110) + (hasHint ? 34 : 0));
     {
-        auto c = projectCard.reduced (14, 10);
-        auto top = c.removeFromTop (18);
-        changeProjectButton.setBounds (projectCard.getRight() - 14 - 96, projectCard.getY() + 10, 96, 28);
-        projectHeading.setBounds (top.withTrimmedRight (100));
-        c.removeFromTop (4);
-        projectName.setBounds (c.removeFromTop (24).withTrimmedRight (100));
-        projectPath.setBounds (c.removeFromTop (20));
+        auto c = projectCard.reduced (14, 12);
+        const auto buttonWidth = juce::jmax (96, textWidth (changeProjectButton.getButtonText(), juce::Font (juce::FontOptions (15.0f))) + 28);
+        changeProjectButton.setBounds (c.getRight() - buttonWidth, c.getY(), buttonWidth, 28);
+        projectHeading.setBounds (c.removeFromTop (16).withTrimmedRight (buttonWidth + 8));
+        c.removeFromTop (6);
+        projectName.setBounds (c.removeFromTop (24).withTrimmedRight (buttonWidth + 8));
+        c.removeFromTop (2);
+        projectPath.setBounds (c.removeFromTop (projectLinked ? 18 : 34));
         if (hasHint)
         {
-            c.removeFromTop (4);
+            c.removeFromTop (6);
             auto row = c.removeFromTop (28);
             relinkButton.setBounds (row.removeFromRight (80));
             relinkHint.setBounds (row);
@@ -574,26 +642,30 @@ void CompanionEditor::resized()
     area.removeFromTop (10);
 
     // Capture card
-    captureCard = area.removeFromTop (138);
+    captureCard = area.removeFromTop (128);
     {
-        auto c = captureCard.reduced (14, 10);
-        captureHeading.setBounds (c.removeFromTop (18));
-        c.removeFromTop (6);
+        auto c = captureCard.reduced (14, 12);
+        captureHeading.setBounds (c.removeFromTop (16));
+        c.removeFromTop (8);
 
         auto row = c.removeFromTop (30);
-        recordButton.setBounds (row.removeFromRight (90));
-        row.removeFromRight (10);
-        const auto half = row.getWidth() / 2;
-        auto modeArea = row.removeFromLeft (half);
-        modeLabel.setBounds (modeArea.removeFromLeft (52));
-        modeBox.setBounds (modeArea.reduced (0, 0).withTrimmedRight (8));
-        lengthLabel.setBounds (row.removeFromLeft (60));
+        if (recordButton.isVisible())
+        {
+            recordButton.setBounds (row.removeFromRight (90));
+            row.removeFromRight (10);
+        }
+        const auto modeLabelWidth = textWidth (modeLabel.getText(), modeLabel.getFont()) + 8;
+        const auto lengthLabelWidth = textWidth (lengthLabel.getText(), lengthLabel.getFont()) + 8;
+        auto modeArea = row.removeFromLeft (row.getWidth() / 2);
+        modeLabel.setBounds (modeArea.removeFromLeft (modeLabelWidth));
+        modeBox.setBounds (modeArea.withTrimmedRight (12));
+        lengthLabel.setBounds (row.removeFromLeft (lengthLabelWidth));
         lengthBox.setBounds (row);
 
-        c.removeFromTop (12);
-        meter.setBounds (c.removeFromTop (8));
+        c.removeFromTop (14);
+        meter.setBounds (c.removeFromTop (6));
         c.removeFromTop (8);
-        captureStatus.setBounds (c.removeFromTop (22));
+        captureStatus.setBounds (c.removeFromTop (20));
     }
     area.removeFromTop (10);
 
@@ -601,10 +673,11 @@ void CompanionEditor::resized()
     todoCard = area;
     {
         auto c = todoCard.reduced (14, 10);
-        auto tabs = c.removeFromTop (24);
-        todosTab.setBounds (tabs.removeFromLeft (90));
-        tabs.removeFromLeft (6);
-        notesTab.setBounds (tabs.removeFromLeft (90));
+        tabsRow = c.removeFromTop (30);
+        auto tabs = tabsRow;
+        for (auto* tab : { &todosTab, &notesTab })
+            tab->setBounds (tabs.removeFromLeft (textWidth (tab->getButtonText(), juce::Font (juce::FontOptions (13.0f))) + 28)
+                                .withTrimmedBottom (2));
         c.removeFromTop (8);
 
         auto notesArea = c;
