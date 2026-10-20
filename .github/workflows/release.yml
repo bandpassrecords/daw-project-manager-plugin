@@ -83,6 +83,42 @@ jobs:
       - name: Run tests
         run: ctest --test-dir build -C Release --output-on-failure
 
+  # The bridge driver the app's integration tests run (docs/development.md),
+  # built the way the app's CI builds it: a fresh Ubuntu with only the
+  # packages juceaide needs, so that list stays true. Then one short session
+  # through stdin/stdout.
+  bridge_driver:
+    name: Bridge driver on Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the driver's dependencies
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libfreetype-dev libfontconfig1-dev
+
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DDPM_BUILD_TESTS=OFF
+          cmake --build build --config Release --target DAWProjectManagerBridgeDriver --parallel
+
+      - name: Drive one session
+        shell: bash
+        run: |
+          DRIVER=build/DAWProjectManagerBridgeDriver_artefacts/Release/DAWProjectManagerBridgeDriver
+          export DPM_BRIDGE_DIR="$RUNNER_TEMP/bridge"
+          mkdir -p "$DPM_BRIDGE_DIR"
+          cat > "$DPM_BRIDGE_DIR/index.json" <<'JSON'
+          {"schema":1,"generatedAt":"2026-10-21T10:00:00.000Z","app":{"version":"0"},
+           "projects":[{"id":"p1","profileId":"a","profileName":"A","name":"Song","filePath":"/music/Song.cpr","dawType":"Cubase","todos":[]}]}
+          JSON
+          printf '%s\n' '{"cmd":"refresh"}' '{"cmd":"linkTo","profileId":"a","projectId":"p1"}' \
+            '{"cmd":"addTodo","text":"Check the mix"}' '{"cmd":"capture","seconds":11}' '{"cmd":"deliver"}' '{"cmd":"quit"}' \
+            | "$DRIVER" | tee replies.txt
+          test "$(wc -l < replies.txt)" -eq 7
+          ! grep -q '"ok": *false' replies.txt
+          grep -q '"verdict": *"keep"' replies.txt
+          test "$(ls "$DPM_BRIDGE_DIR/outbox" | wc -l)" -eq 3
+
   # Builds, validates and packages the plugin. PRs and manual runs upload the
   # installers as workflow artifacts for testers; tags upload them to the
   # GitHub release.

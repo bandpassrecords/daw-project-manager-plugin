@@ -28,6 +28,11 @@ plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-m
 - `docs/PROTOCOL.md` is the contract; `BridgeProtocol`, `ProjectIndex`,
   `BridgeSession` and `Outbox` implement this side of it. Change them
   together, in the same commit, and the app side with them.
+- The bridge driver's commands (`BridgeDriver`, documented in
+  `docs/development.md`) are a contract too: the app's integration tests
+  drive the plugin through them, pinned to a commit of this repo. Add
+  commands and fields freely; renaming or removing one breaks the app's tests
+  the next time it moves its pin.
 - Projects are matched by **profile and id, never id alone** — the app's rule
   (one id can sit in two profiles).
 - The plugin never edits or deletes to-dos, never writes the app's files, and
@@ -167,6 +172,7 @@ CI runs this on every platform, plus `auval` on macOS.
 | `index.json` / `launch.json` | `src/core/ProjectIndex.*` |
 | Which project is open | `src/core/ProjectMatcher.*` |
 | Everything one instance does with the bridge | `src/core/BridgeSession.*` |
+| The bridge driver for the app's integration tests | `src/core/BridgeDriver.*`, `tools/BridgeDriverMain.cpp` |
 | Saved state | `src/core/PluginState.*` |
 | To-do merging and acknowledgement | `src/core/TodoBook.*` |
 | Capture decisions / threading / FLAC | `src/core/CapturePolicy.*`, `CaptureEngine.*`, `CaptureWriter.*` |

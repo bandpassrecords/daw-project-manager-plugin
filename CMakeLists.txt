@@ -27,6 +27,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(DPM_BUILD_TESTS "Build the unit tests" ON)
+option(DPM_BUILD_DRIVER "Build the bridge driver the app's integration tests run" ON)
 option(DPM_BUILD_STANDALONE "Also build a Standalone app (development only: it has no host transport)" OFF)
 
 include(FetchContent)
@@ -62,6 +63,9 @@ set(DPM_CORE_SOURCES
     src/core/TestTransport.cpp
     src/core/TodoBook.cpp
     src/core/Version.cpp)
+
+# The bridge driver's commands: in the driver and the tests, not the plugin.
+set(DPM_DRIVER_SOURCES src/core/BridgeDriver.cpp)
 
 set(DPM_JUCE_DEFINITIONS
     JUCE_WEB_BROWSER=0
@@ -160,6 +164,29 @@ if(APPLE)
 endif()
 
 # ---------------------------------------------------------------------------
+# Bridge driver: one BridgeSession over stdin/stdout, no audio, GUI or host,
+# for the app's integration tests (docs/development.md)
+# ---------------------------------------------------------------------------
+
+if(DPM_BUILD_DRIVER)
+    juce_add_console_app(DAWProjectManagerBridgeDriver PRODUCT_NAME "DAWProjectManagerBridgeDriver")
+    target_sources(DAWProjectManagerBridgeDriver PRIVATE
+        ${DPM_CORE_SOURCES}
+        ${DPM_DRIVER_SOURCES}
+        tools/BridgeDriverMain.cpp)
+    target_include_directories(DAWProjectManagerBridgeDriver PRIVATE src)
+    target_compile_definitions(DAWProjectManagerBridgeDriver PRIVATE ${DPM_JUCE_DEFINITIONS})
+    target_compile_options(DAWProjectManagerBridgeDriver PRIVATE ${DPM_WARNINGS})
+    target_link_libraries(DAWProjectManagerBridgeDriver PRIVATE
+        juce::juce_core
+        juce::juce_data_structures
+        juce::juce_audio_basics
+        juce::juce_audio_formats
+        juce::juce_recommended_config_flags
+        juce::juce_recommended_warning_flags)
+endif()
+
+# ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
 
@@ -173,6 +200,8 @@ if(DPM_BUILD_TESTS)
     juce_add_console_app(DAWProjectManagerTests PRODUCT_NAME "DAWProjectManagerTests")
     target_sources(DAWProjectManagerTests PRIVATE
         ${DPM_CORE_SOURCES}
+        ${DPM_DRIVER_SOURCES}
+        tests/BridgeDriverTests.cpp
         tests/BridgePathsTests.cpp
         tests/BridgeProtocolTests.cpp
         tests/CaptureNamingTests.cpp
