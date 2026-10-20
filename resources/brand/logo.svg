@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
   <!-- The DAW Project Manager mark, traced from the app's app_icon.png:
-       orange, grey and navy bands, each seam a darker shade of its band. -->
+       orange, gray and navy bands, each seam a darker shade of its band. -->
   <defs>
     <clipPath id="tile">
       <rect x="0" y="0" width="100" height="100" rx="29" ry="29"/>

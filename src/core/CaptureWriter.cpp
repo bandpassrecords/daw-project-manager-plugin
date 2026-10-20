@@ -60,7 +60,7 @@ double CaptureWriter::close()
     if (! isOpen())
         return 0;
 
-    writer.reset();     // flushes and finalises the FLAC header
+    writer.reset();     // flushes and finalizes the FLAC header
     return rate > 0 ? (double) written / rate : 0;
 }
 

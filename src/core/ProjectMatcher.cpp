@@ -18,7 +18,7 @@ namespace
     const auto freshLaunch = juce::RelativeTime::minutes (15);
     const auto staleLaunch = juce::RelativeTime::hours (12);
 
-    juce::String normalisePath (const juce::String& s)
+    juce::String normalizePath (const juce::String& s)
     {
         return s.replaceCharacter ('\\', '/').toLowerCase();
     }
@@ -32,7 +32,7 @@ namespace
     {
         if (hint.projectId.isNotEmpty())
             return hint.projectId == p.id && hint.profileId == p.profileId;
-        return normalisePath (hint.filePath) == normalisePath (p.filePath);
+        return normalizePath (hint.filePath) == normalizePath (p.filePath);
     }
 }
 
@@ -62,7 +62,7 @@ bool containsAsWord (const juce::String& haystack, const juce::String& needle)
 
 std::vector<MatchCandidate> rankProjects (const ProjectIndex& index, const DetectionContext& ctx)
 {
-    const auto title = normalisePath (ctx.windowTitle);
+    const auto title = normalizePath (ctx.windowTitle);
     const auto hostDaw = dawTypeForHost (ctx.hostName);
 
     std::optional<juce::RelativeTime> launchAge;
@@ -77,7 +77,7 @@ std::vector<MatchCandidate> rankProjects (const ProjectIndex& index, const Detec
 
         if (title.isNotEmpty())
         {
-            const auto path = normalisePath (p.filePath);
+            const auto path = normalizePath (p.filePath);
             const auto fileName = p.fileName().toLowerCase();
             const auto stem = p.fileStem();
 

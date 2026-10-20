@@ -46,8 +46,12 @@ plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-m
 
 ### Always translate UI strings
 - Every user-visible string goes through `TRANS("…")`, in English.
+- Write US English everywhere: strings, names, comments, docs ("color",
+  "gray", "organize", "normalize"). Only JUCE's own API keeps its British
+  spelling (`juce::Colour`, `setColour`, `getCentreY`, `LocalisedStrings`,
+  the `_artefacts` build folder).
 - The plugin ships in the app's nine languages: add the string to every file in
-  `resources/translations/`. `LocalisationTests` fails on a missing or unused
+  `resources/translations/`. `LocalizationTests` fails on a missing or unused
   key and on a lost `{placeholder}`.
 - `pt.txt` is **Brazilian Portuguese**, as in the app: "arquivo", "baixar",
   "tela", "usuário", "está gravando" — never "ficheiro", "descarregar", "ecrã",
@@ -98,8 +102,8 @@ plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-m
   hello — a host's plug-in scan — never says goodbye.
 - Stamped to-dos use the app's own format, `[MM:SS] text`
   (`playback_todo_utils.dart`). Keep them identical.
-- UI colours are the app's Classic Dark (`palette` in `BrandLookAndFeel.h`),
-  with the app icon's colours (`brand`) for accents: orange for the one main
+- UI colors are the app's Classic Dark (`palette` in `BrandLookAndFeel.h`),
+  with the app icon's colors (`brand`) for accents: orange for the one main
   action of a section (`makePrimary`), navy for selection. The mark itself is
   `resources/brand/logo.svg`; `icon.png` and the installer's `icon.ico` are
   the app's own icon.

@@ -8,13 +8,13 @@ namespace dpm
 
 namespace
 {
-    const juce::Colour panelColour = palette::warning.withAlpha (0.12f);
+    const juce::Colour panelColor = palette::warning.withAlpha (0.12f);
 
-    void small (juce::Label& l, const juce::String& text, juce::Colour colour = palette::textSecondary)
+    void small (juce::Label& l, const juce::String& text, juce::Colour color = palette::textSecondary)
     {
         l.setText (text, juce::dontSendNotification);
         l.setFont (juce::FontOptions (12.0f));
-        l.setColour (juce::Label::textColourId, colour);
+        l.setColour (juce::Label::textColourId, color);
     }
 }
 
@@ -105,7 +105,7 @@ void TestPanel::timerCallback()
 
 void TestPanel::paint (juce::Graphics& g)
 {
-    g.setColour (panelColour);
+    g.setColour (panelColor);
     g.fillRect (getLocalBounds());
     g.setColour (palette::warning.withAlpha (0.5f));
     g.fillRect (getLocalBounds().removeFromBottom (1));

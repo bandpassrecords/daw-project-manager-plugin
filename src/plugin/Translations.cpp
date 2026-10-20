@@ -1,6 +1,6 @@
 #include "Translations.h"
 
-#include "core/Localisation.h"
+#include "core/Localization.h"
 
 #include <DPMBinaryData.h>
 

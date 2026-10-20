@@ -99,6 +99,6 @@ cmake --build build --config Debug --target DAWProjectManager_Standalone
 |---|---|
 | 🛠 [Development](docs/development.md) | build, test, and try it without a DAW |
 | 🔌 [Protocol](docs/PROTOCOL.md) | the contract with the app |
-| 🧭 [CLAUDE.md](CLAUDE.md) | how the code is organised, validating, releasing |
+| 🧭 [CLAUDE.md](CLAUDE.md) | how the code is organized, validating, releasing |
 
 <sub>AGPL-3.0 · BandPass Records · a separate program from DAW Project Manager (MIT): the two talk only through files</sub>

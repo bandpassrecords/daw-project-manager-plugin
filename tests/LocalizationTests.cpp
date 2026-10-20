@@ -1,4 +1,4 @@
-#include "core/Localisation.h"
+#include "core/Localization.h"
 
 #include <catch2/catch_test_macros.hpp>
 

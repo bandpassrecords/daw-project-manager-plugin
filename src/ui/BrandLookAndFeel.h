@@ -5,15 +5,15 @@
 namespace dpm
 {
 
-/** The colours of the app's icon (app_icon.png in daw-project-manager):
-    orange, grey and navy bands, each with a darker seam. resources/brand/
+/** The colors of the app's icon (app_icon.png in daw-project-manager):
+    orange, gray and navy bands, each with a darker seam. resources/brand/
     logo.svg draws the same mark.
 */
 namespace brand
 {
     inline const juce::Colour orange     { 0xffff6100 };
     inline const juce::Colour orangeDeep { 0xffaf4708 };
-    inline const juce::Colour grey       { 0xff7b7b7b };
+    inline const juce::Colour gray       { 0xff7b7b7b };
     inline const juce::Colour navy       { 0xff123153 };
     inline const juce::Colour navyDeep   { 0xff15283c };
 }
@@ -42,7 +42,7 @@ namespace palette
 
 /** A middle dot between details. Built from UTF-8 bytes: a non-ASCII
     character in a plain string literal is read as Latin-1 (showing as "A^.")
-    and asserts in debug builds. LocalisationTests keeps every literal in
+    and asserts in debug builds. LocalizationTests keeps every literal in
     src/ ASCII.
 */
 inline const juce::String detailSeparator = juce::String::fromUTF8 ("  \xc2\xb7  ");
@@ -52,7 +52,7 @@ class BrandLookAndFeel : public juce::LookAndFeel_V4
 public:
     BrandLookAndFeel();
 
-    void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour& backgroundColour,
+    void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour& backgroundColor,
                                bool isMouseOverButton, bool isButtonDown) override;
     void drawComboBox (juce::Graphics&, int width, int height, bool isButtonDown, int buttonX, int buttonY,
                        int buttonW, int buttonH, juce::ComboBox&) override;

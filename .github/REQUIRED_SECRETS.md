@@ -2,7 +2,7 @@
 
 Add these under **Settings → Secrets and variables → Actions**. They use the
 **same names as the app's release job** (daw-project-manager's
-`.github/REQUIRED_SECRETS.md`), so organisation-level secrets serve both repos.
+`.github/REQUIRED_SECRETS.md`), so organization-level secrets serve both repos.
 
 ## Signing the plug-in bundles (Gatekeeper "identified developer")
 
@@ -32,7 +32,7 @@ bundles inside, and the `.zip`, are still signed and notarized.
 | `APPLE_APP_SPECIFIC_PASSWORD` | appleid.apple.com → Sign-In and Security → App-Specific Passwords |
 | `APPLE_TEAM_ID` | your 10-character Team ID |
 
-## Behaviour when unset
+## Behavior when unset
 
 Every signing and notarization step is skipped cleanly: the bundles are
 ad-hoc signed (enough for Apple Silicon to load them) and the build succeeds.

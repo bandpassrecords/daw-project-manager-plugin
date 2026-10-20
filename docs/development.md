@@ -48,5 +48,5 @@ PR and manual CI runs attach a ready-made Standalone for testers.
 ## More
 
 - [`PROTOCOL.md`](PROTOCOL.md): how the plugin and the app talk.
-- [`CLAUDE.md`](../CLAUDE.md): how the code is organised, validating, and
+- [`CLAUDE.md`](../CLAUDE.md): how the code is organized, validating, and
   cutting a release.

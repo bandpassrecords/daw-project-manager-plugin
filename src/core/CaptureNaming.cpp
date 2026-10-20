@@ -12,7 +12,7 @@ juce::String captureFileName (const juce::String& projectName, juce::Time captur
     if (base.isEmpty())
         base = "Unlinked";
 
-    // Long enough to recognise, short enough that the whole path stays well
+    // Long enough to recognize, short enough that the whole path stays well
     // inside Windows' 260 characters.
     base = base.substring (0, 60).trimEnd();
 

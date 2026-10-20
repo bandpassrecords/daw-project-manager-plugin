@@ -29,7 +29,7 @@ TEST_CASE ("An unnamed project is 'Unlinked', and long names are cut", "[naming]
     CHECK (longName.length() <= 60 + juce::String ("_20261018-140233.flac").length());
 }
 
-TEST_CASE ("Takes being written are recognisable so the app skips them", "[naming]")
+TEST_CASE ("Takes being written are recognizable so the app skips them", "[naming]")
 {
     const auto dir = juce::File::getSpecialLocation (juce::File::tempDirectory);
     const auto partial = dir.getChildFile (partialCaptureName ("1234-5678-abcd", 3));

@@ -32,7 +32,7 @@ void LevelMeter::paint (juce::Graphics& g)
     g.fillRoundedRectangle (bounds, bounds.getHeight() * 0.5f);
 
     const auto fill = bounds.withWidth (bounds.getWidth() * juce::jlimit (0.0f, 1.0f, level));
-    g.setColour (recording ? palette::recording : brand::grey.brighter (0.4f));
+    g.setColour (recording ? palette::recording : brand::gray.brighter (0.4f));
     g.fillRoundedRectangle (fill, bounds.getHeight() * 0.5f);
 }
 
@@ -40,10 +40,10 @@ void LevelMeter::paint (juce::Graphics& g)
 
 namespace
 {
-    void style (juce::Label& label, float size, juce::Colour colour, bool bold = false)
+    void style (juce::Label& label, float size, juce::Colour color, bool bold = false)
     {
         label.setFont (juce::FontOptions (size, bold ? juce::Font::bold : juce::Font::plain));
-        label.setColour (juce::Label::textColourId, colour);
+        label.setColour (juce::Label::textColourId, color);
         label.setMinimumHorizontalScale (1.0f);
         label.setBorderSize ({});
     }
@@ -425,14 +425,14 @@ void PluginEditor::refreshCaptureStatus()
     recordingShown = recording;
 
     juce::String status;
-    auto colour = palette::textSecondary;
+    auto color = palette::textSecondary;
 
     if (recording)
     {
         status = TRANS ("Recording {time} of {max}")
                      .replace ("{time}", formatClock (engine.recordedSeconds()))
                      .replace ("{max}", formatClock (settings.capture.maxSeconds));
-        colour = palette::recording.brighter (0.3f);
+        color = palette::recording.brighter (0.3f);
     }
     else
     {
@@ -465,7 +465,7 @@ void PluginEditor::refreshCaptureStatus()
     }
 
     captureStatus.setText (status, juce::dontSendNotification);
-    captureStatus.setColour (juce::Label::textColourId, colour);
+    captureStatus.setColour (juce::Label::textColourId, color);
 }
 
 void PluginEditor::timerCallback()
@@ -560,11 +560,11 @@ void PluginEditor::paint (juce::Graphics& g)
         logo->drawWithin (g, logoArea.toFloat(), juce::RectanglePlacement::centred, 1.0f);
 
     // Whether the app is there: a dot in a tinted pill.
-    const auto statusColour = appConnected ? palette::connected : palette::warning;
+    const auto statusColor = appConnected ? palette::connected : palette::warning;
     const auto pill = statusPill.toFloat();
-    g.setColour (statusColour.withAlpha (0.14f));
+    g.setColour (statusColor.withAlpha (0.14f));
     g.fillRoundedRectangle (pill, pill.getHeight() * 0.5f);
-    g.setColour (statusColour);
+    g.setColour (statusColor);
     g.fillEllipse (pill.getX() + 10.0f, pill.getCentreY() - 3.5f, 7.0f, 7.0f);
 
     drawCard (g, projectCard);

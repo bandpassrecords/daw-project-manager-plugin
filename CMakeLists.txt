@@ -54,7 +54,7 @@ set(DPM_CORE_SOURCES
     src/core/CaptureWriter.cpp
     src/core/BridgeSession.cpp
     src/core/PluginState.cpp
-    src/core/Localisation.cpp
+    src/core/Localization.cpp
     src/core/NotesBook.cpp
     src/core/Outbox.cpp
     src/core/ProjectIndex.cpp
@@ -185,7 +185,7 @@ if(DPM_BUILD_TESTS)
         tests/PresenceTests.cpp
         tests/ProjectIndexTests.cpp
         tests/ProjectMatcherTests.cpp
-        tests/LocalisationTests.cpp
+        tests/LocalizationTests.cpp
         tests/NotesTests.cpp
         tests/TestTransportTests.cpp
         tests/TodoBookTests.cpp

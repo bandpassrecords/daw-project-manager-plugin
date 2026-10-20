@@ -46,21 +46,21 @@ BrandLookAndFeel::BrandLookAndFeel()
 }
 
 void BrandLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& button,
-                                             const juce::Colour& backgroundColour,
+                                             const juce::Colour& backgroundColor,
                                              bool isMouseOverButton, bool isButtonDown)
 {
     auto bounds = button.getLocalBounds().toFloat().reduced (0.5f);
-    auto colour = button.getToggleState() ? button.findColour (juce::TextButton::buttonOnColourId)
-                                          : backgroundColour;
+    auto color = button.getToggleState() ? button.findColour (juce::TextButton::buttonOnColourId)
+                                         : backgroundColor;
 
     if (! button.isEnabled())
-        colour = colour.withMultipliedAlpha (0.4f);
+        color = color.withMultipliedAlpha (0.4f);
     else if (isButtonDown)
-        colour = colour.darker (0.2f);
+        color = color.darker (0.2f);
     else if (isMouseOverButton)
-        colour = colour.brighter (0.15f);
+        color = color.brighter (0.15f);
 
-    g.setColour (colour);
+    g.setColour (color);
     g.fillRoundedRectangle (bounds, palette::radius);
 }
 
@@ -129,9 +129,9 @@ void drawCard (juce::Graphics& g, juce::Rectangle<int> area)
 void drawBrandStripe (juce::Graphics& g, juce::Rectangle<float> area)
 {
     // Where each band starts along the strip, as the icon's top edge has
-    // them: mostly orange, then grey, then navy, with a darker seam between.
-    struct Band { float from; juce::Colour colour; };
-    const Band bands[] { { 0.0f, brand::orange },  { 0.50f, brand::orangeDeep }, { 0.53f, brand::grey },
+    // them: mostly orange, then gray, then navy, with a darker seam between.
+    struct Band { float from; juce::Colour color; };
+    const Band bands[] { { 0.0f, brand::orange },  { 0.50f, brand::orangeDeep }, { 0.53f, brand::gray },
                          { 0.76f, brand::navyDeep }, { 0.79f, brand::navy } };
     const auto slant = area.getHeight();
 
@@ -143,7 +143,7 @@ void drawBrandStripe (juce::Graphics& g, juce::Rectangle<float> area)
         juce::Path band;
         band.addQuadrilateral (x0 + slant, area.getY(), x1 + slant, area.getY(),
                                x1, area.getBottom(), x0, area.getBottom());
-        g.setColour (bands[i].colour);
+        g.setColour (bands[i].color);
         g.fillPath (band);
     }
 }

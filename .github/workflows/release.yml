@@ -96,7 +96,7 @@ jobs:
     # `if:` conditions can read them through the env context: a step's own
     # `env:` is not visible to that step's `if:` (the app learned this the
     # hard way — its signing steps silently never ran). Same secret names as
-    # the app's release job, so one set of organisation secrets serves both.
+    # the app's release job, so one set of organization secrets serves both.
     env:
       APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
       APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
