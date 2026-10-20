@@ -1,10 +1,4 @@
 #!/bin/sh
-# The bundles' names before the plug-in was renamed: remove them from where
-# this install went ($2: / for all users, the home folder for "me only"), or
-# hosts would list the plug-in twice.
-PLUGINS="${2%/}/Library/Audio/Plug-Ins"
-rm -rf "$PLUGINS/VST3/DPM Companion.vst3" "$PLUGINS/Components/DPM Companion.component"
-
 # Make hosts see the new Audio Unit without a restart: the registrar caches
 # the component list and rebuilds it when it is next started.
 killall -9 AudioComponentRegistrar >/dev/null 2>&1 || true

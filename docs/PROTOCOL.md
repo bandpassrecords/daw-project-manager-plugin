@@ -113,8 +113,7 @@ learns they arrived, see [Acknowledgement](#acknowledgement)).
 - `applied` (top level) lists the ids of the plugin messages the app handled
   in the last 30 minutes, whatever came of them. A notes edit is confirmed by
   its id appearing here.
-- `companion` (optional; named after the plugin's old name, DPM Companion)
-  names the newest plugin release:
+- `plugin` (optional) names the newest plugin release:
   `{ "latestVersion": "0.2.0", "releaseUrl": "https://github.com/bandpassrecords/daw-project-manager-plugin/releases/tag/v0.2.0" }`.
   The app looks it up on GitHub (the plugin itself never goes on the network)
   at most once a day, only when the user's update checks are on and only in
@@ -247,7 +246,7 @@ overwrite the editor. The plugin offers "Reload" instead.
 A pre-listen recording of the project, 24-bit FLAC, `file` relative to the
 bridge folder. The app (`companion_bridge_service.dart`):
 
-1. copies it to `preview_songs/companion/<project id>/`;
+1. copies it to `preview_songs/plugin/<project id>/`;
 2. makes it the project's preview song (the stack's, for a member), but only
    when the project has no preview, its preview is an earlier capture, or its
    preview is an auto-detected mixdown older than the capture. A preview the

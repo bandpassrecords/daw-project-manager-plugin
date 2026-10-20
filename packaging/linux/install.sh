@@ -18,7 +18,6 @@ case "${1:-}" in
 esac
 
 mkdir -p "$DEST"
-# The old name too, from before the plug-in was renamed: hosts would list both.
-rm -rf "$DEST/DAW Project Manager.vst3" "$DEST/DPM Companion.vst3"
+rm -rf "$DEST/DAW Project Manager.vst3"
 cp -a "$HERE/DAW Project Manager.vst3" "$DEST/"
 echo "Installed to $DEST/DAW Project Manager.vst3. Rescan plug-ins in your DAW."

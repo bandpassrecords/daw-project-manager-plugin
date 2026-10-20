@@ -7,8 +7,7 @@ namespace dpm
 
 namespace ids
 {
-    // The plugin's old name (DPM Companion): saved in DAW projects, so it stays.
-    static const juce::Identifier state ("DPMCompanionState");
+    static const juce::Identifier state ("DAWProjectManagerState");
     static const juce::Identifier stateVersion ("stateVersion");
     static const juce::Identifier instanceId ("instanceId");
     static const juce::Identifier project ("Project");

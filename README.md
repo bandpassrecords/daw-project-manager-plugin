@@ -53,9 +53,6 @@ Download the installer for your system from the
 and rescan plug-ins in your DAW. The installers use the standard plug-in
 folders every DAW scans, for all users or just you. Each file has a `.sha256`.
 
-Coming from **DPM Companion**, the plugin's old name? Installing replaces it,
-and DAW projects that use it keep working.
-
 ## Use it
 
 1. Insert **DAW Project Manager** on the master bus.

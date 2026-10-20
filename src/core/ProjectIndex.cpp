@@ -111,9 +111,7 @@ std::optional<ProjectIndex> ProjectIndex::parse (const juce::String& json, juce:
     index.generatedAt = timeOr (root["generatedAt"]);
     index.appVersion = root["app"]["version"].toString();
 
-    // "companion": the field kept the plugin's old name (DPM Companion); the
-    // app writes it, so it stays.
-    const auto& plugin = root["companion"];
+    const auto& plugin = root["plugin"];
     const auto latestVersion = plugin["latestVersion"].toString().trim();
     if (latestVersion.isNotEmpty())
         index.latestRelease = PluginRelease { latestVersion, plugin["releaseUrl"].toString().trim() };

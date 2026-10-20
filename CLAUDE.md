@@ -57,22 +57,14 @@ plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-m
 
 ### The name
 - DAWs list the plugin as **DAW Project Manager** (by BandPass Records); its
-  downloads are "DAW Project Manager Plugin". Don't call it "companion" in
-  new names, text or docs.
-- It was called DPM Companion until v0.1.x. These keep that name on purpose,
-  because something outside this code depends on them — never change them:
-  - the plugin codes (`Bnpr`/`Dpmc`) and the macOS bundle id
-    `com.bandpassrecords.dpm.companion`: hosts find a saved plugin by them,
-    and macOS installs by the bundle id;
-  - `DPMCompanionState`, the saved state's tag in DAW projects;
-  - the `companion` field of `index.json` and the app's
-    `preview_songs/companion/`: the app's names, in the contract;
-  - `{autopf}\DPM Companion`, where an update finds the uninstaller it
-    replaces;
-  - the old repository's release links (`isReleasePageUrl`), which older
-    apps still send.
-- The installers remove a `DPM Companion` bundle left from before, or the DAW
-  would list the plugin twice.
+  downloads are "DAW Project Manager Plugin". It was called DPM Companion
+  before its first release: don't bring "companion" back in names, text or
+  docs.
+- Once released, these never change, or saved projects and installs break:
+  the plugin codes (`Bnpr`/`Dpmc`) and the bundle id
+  `com.bandpassrecords.dpm.plugin` (hosts find a saved plugin by them), the
+  saved state's `DAWProjectManagerState` tag, the installer's `AppId` and
+  uninstaller folder, and the bundle names.
 
 ### New state fields
 - `PluginState` is saved in the DAW project (`getStateInformation`). A new

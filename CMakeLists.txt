@@ -94,7 +94,7 @@ juce_add_plugin(DAWProjectManager
     PRODUCT_NAME "DAW Project Manager"
     COMPANY_NAME "BandPass Records"
     COMPANY_WEBSITE "https://github.com/bandpassrecords/daw-project-manager"
-    BUNDLE_ID com.bandpassrecords.dpm.companion
+    BUNDLE_ID com.bandpassrecords.dpm.plugin
     VERSION ${DPM_VERSION}
     PLUGIN_MANUFACTURER_CODE Bnpr
     PLUGIN_CODE Dpmc

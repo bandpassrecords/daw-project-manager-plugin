@@ -18,9 +18,6 @@
 
 #define VST3_SOURCE "..\..\build\DAWProjectManager_artefacts\Release\VST3\DAW Project Manager.vst3"
 #define BUNDLE "DAW Project Manager.vst3"
-; The bundle's name before the plug-in was renamed: an update removes it,
-; or the DAW would list the plug-in twice.
-#define OLD_BUNDLE "DPM Companion.vst3"
 
 [Setup]
 ; Never change AppId: it is how an update finds the version it replaces.
@@ -38,9 +35,8 @@ AppendDefaultDirName=no
 DirExistsWarning=no
 DisableDirPage=no
 DisableProgramGroupPage=yes
-; The uninstaller stays out of the VST3 folder hosts scan. The folder keeps
-; the plug-in's old name: an update finds the uninstaller it replaces there.
-UninstallFilesDir={autopf}\DPM Companion
+; The uninstaller stays out of the VST3 folder hosts scan.
+UninstallFilesDir={autopf}\DAW Project Manager Plugin
 UninstallDisplayName=DAW Project Manager Plugin (VST3)
 ; The app's own icon (app_icon.ico in daw-project-manager).
 SetupIconFile=icon.ico
@@ -85,12 +81,8 @@ zh.SelectDirLabel3=安装程序将把 DAW Project Manager VST3 插件安装到�
 [Files]
 Source: "{#VST3_SOURCE}\*"; DestDir: "{app}\{#BUNDLE}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
-[InstallDelete]
-Type: filesandordirs; Name: "{app}\{#OLD_BUNDLE}"
-
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\{#BUNDLE}"
-Type: filesandordirs; Name: "{app}\{#OLD_BUNDLE}"
 
 [Code]
 function DefaultVst3Dir(Param: String): String;
@@ -101,28 +93,16 @@ begin
     Result := ExpandConstant('{localappdata}\Programs\Common\VST3');
 end;
 
-procedure InitializeWizard;
-begin
-  // Builds before the folder page kept the uninstaller's folder as {app};
-  // an update from one would otherwise start on that folder instead of the
-  // VST3 folder the plug-in is actually in.
-  if SameText(WizardForm.DirEdit.Text, ExpandConstant('{autopf}\DPM Companion')) then
-    WizardForm.DirEdit.Text := DefaultVst3Dir('');
-end;
-
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   OldBundle: String;
 begin
-  // Moved to another folder on update: remove the old copy, under either
-  // name, or the DAW would list the plug-in twice.
+  // Moved to another folder on update: remove the old copy, or the DAW
+  // would list the plug-in twice.
   if (CurStep = ssInstall) and (WizardForm.PrevAppDir <> '')
      and not SameText(WizardForm.PrevAppDir, WizardDirValue) then
   begin
     OldBundle := AddBackslash(WizardForm.PrevAppDir) + '{#BUNDLE}';
-    if DirExists(OldBundle) then
-      DelTree(OldBundle, True, True, True);
-    OldBundle := AddBackslash(WizardForm.PrevAppDir) + '{#OLD_BUNDLE}';
     if DirExists(OldBundle) then
       DelTree(OldBundle, True, True, True);
   end;

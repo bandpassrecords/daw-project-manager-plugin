@@ -42,10 +42,8 @@ bool isNewerVersion (const juce::String& remote, const juce::String& local)
 
 bool isReleasePageUrl (const juce::String& url)
 {
-    for (const juce::String prefix : { releasesUrlPrefix, "https://github.com/bandpassrecords/dpm-companion/releases" })
-        if (url == prefix || url.startsWith (prefix + "/"))
-            return true;
-    return false;
+    const juce::String prefix (releasesUrlPrefix);
+    return url == prefix || url.startsWith (prefix + "/");
 }
 
 } // namespace dpm

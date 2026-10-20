@@ -14,7 +14,7 @@ OUT="$2"
 ARTEFACTS="build/DAWProjectManager_artefacts/Release"
 VST3="$ARTEFACTS/VST3/DAW Project Manager.vst3"
 AU="$ARTEFACTS/AU/DAW Project Manager.component"
-IDENTIFIER="com.bandpassrecords.dpm.companion"
+IDENTIFIER="com.bandpassrecords.dpm.plugin"
 
 mkdir -p "$OUT"
 WORK="$(mktemp -d)"
