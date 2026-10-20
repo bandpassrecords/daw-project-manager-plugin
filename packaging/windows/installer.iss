@@ -3,7 +3,7 @@
 ; Version is injected by CI via the APP_VERSION environment variable, as the
 ; app's installer.iss does; the fallback keeps local builds working.
 ;   iscc packaging\windows\installer.iss
-; Expects the Release build at build\DPMCompanion_artefacts\Release\VST3.
+; Expects the Release build at build\DAWProjectManager_artefacts\Release\VST3.
 ;
 ; The folder page picks where the plug-in goes. It starts on the standard
 ; VST3 folder, the one every DAW scans: C:\Program Files\Common Files\VST3
@@ -16,7 +16,7 @@
   #define APP_VERSION "0.0.0"
 #endif
 
-#define VST3_SOURCE "..\..\build\DPMCompanion_artefacts\Release\VST3\DAW Project Manager.vst3"
+#define VST3_SOURCE "..\..\build\DAWProjectManager_artefacts\Release\VST3\DAW Project Manager.vst3"
 #define BUNDLE "DAW Project Manager.vst3"
 ; The bundle's name before the plug-in was renamed: an update removes it,
 ; or the DAW would list the plug-in twice.

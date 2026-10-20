@@ -11,7 +11,7 @@ set -euo pipefail
 
 VERSION="$1"
 OUT="$2"
-ARTEFACTS="build/DPMCompanion_artefacts/Release"
+ARTEFACTS="build/DAWProjectManager_artefacts/Release"
 VST3="$ARTEFACTS/VST3/DAW Project Manager.vst3"
 AU="$ARTEFACTS/AU/DAW Project Manager.component"
 IDENTIFIER="com.bandpassrecords.dpm.companion"

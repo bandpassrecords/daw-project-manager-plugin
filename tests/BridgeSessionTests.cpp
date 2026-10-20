@@ -1,7 +1,7 @@
 #include "TestHelpers.h"
 
 #include "core/CaptureNaming.h"
-#include "core/CompanionSession.h"
+#include "core/BridgeSession.h"
 
 using namespace dpm;
 
@@ -13,7 +13,7 @@ namespace
         test::TempDir tmp;
         BridgeFolder bridge = tmp.bridge();
         juce::Time clock = test::fixedTime();
-        CompanionSession session { bridge, [this] { return clock; } };
+        BridgeSession session { bridge, [this] { return clock; } };
 
         void writeIndex (const juce::String& json)
         {
@@ -252,8 +252,8 @@ TEST_CASE ("Without an app, to-dos wait in the saved state and are delivered lat
 
     // The DAW saves the project, closes, and opens it again later.
     const auto saved = f.session.state().toValueTree().createXml();
-    CompanionSession reopened (f.bridge, [&f] { return f.clock; });
-    reopened.restore (CompanionState::fromValueTree (juce::ValueTree::fromXml (*saved)));
+    BridgeSession reopened (f.bridge, [&f] { return f.clock; });
+    reopened.restore (PluginState::fromValueTree (juce::ValueTree::fromXml (*saved)));
     reopened.refresh();
     REQUIRE (reopened.todos().size() == 1);
     CHECK (reopened.todos()[0].text == "Survives");

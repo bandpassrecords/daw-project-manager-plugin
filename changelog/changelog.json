@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "The companion plugin's changelog, in the same shape as the app's",
+    "The DAW Project Manager plugin's changelog, in the same shape as the app's",
     "assets/changelog/changelog.json. Its newest entry is the plugin's version:",
     "CMakeLists.txt reads it, and CI fails a release tag that doesn't match it.",
     "",

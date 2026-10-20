@@ -1,11 +1,11 @@
-#include "CompanionLookAndFeel.h"
+#include "BrandLookAndFeel.h"
 
 #include <DPMBinaryData.h>
 
 namespace dpm
 {
 
-CompanionLookAndFeel::CompanionLookAndFeel()
+BrandLookAndFeel::BrandLookAndFeel()
 {
     using namespace juce;
 
@@ -45,9 +45,9 @@ CompanionLookAndFeel::CompanionLookAndFeel()
     setColour (TooltipWindow::outlineColourId, palette::divider);
 }
 
-void CompanionLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& button,
-                                                 const juce::Colour& backgroundColour,
-                                                 bool isMouseOverButton, bool isButtonDown)
+void BrandLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& button,
+                                             const juce::Colour& backgroundColour,
+                                             bool isMouseOverButton, bool isButtonDown)
 {
     auto bounds = button.getLocalBounds().toFloat().reduced (0.5f);
     auto colour = button.getToggleState() ? button.findColour (juce::TextButton::buttonOnColourId)
@@ -64,8 +64,8 @@ void CompanionLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button
     g.fillRoundedRectangle (bounds, palette::radius);
 }
 
-void CompanionLookAndFeel::drawComboBox (juce::Graphics& g, int width, int height, bool, int, int, int, int,
-                                         juce::ComboBox& box)
+void BrandLookAndFeel::drawComboBox (juce::Graphics& g, int width, int height, bool, int, int, int, int,
+                                     juce::ComboBox& box)
 {
     const auto bounds = juce::Rectangle<float> (0, 0, (float) width, (float) height).reduced (0.5f);
     g.setColour (box.findColour (juce::ComboBox::backgroundColourId));
@@ -80,13 +80,13 @@ void CompanionLookAndFeel::drawComboBox (juce::Graphics& g, int width, int heigh
     g.fillPath (arrow);
 }
 
-void CompanionLookAndFeel::fillTextEditorBackground (juce::Graphics& g, int width, int height, juce::TextEditor& editor)
+void BrandLookAndFeel::fillTextEditorBackground (juce::Graphics& g, int width, int height, juce::TextEditor& editor)
 {
     g.setColour (editor.findColour (juce::TextEditor::backgroundColourId));
     g.fillRoundedRectangle (juce::Rectangle<float> (0, 0, (float) width, (float) height).reduced (0.5f), palette::radius);
 }
 
-void CompanionLookAndFeel::drawTextEditorOutline (juce::Graphics& g, int width, int height, juce::TextEditor& editor)
+void BrandLookAndFeel::drawTextEditorOutline (juce::Graphics& g, int width, int height, juce::TextEditor& editor)
 {
     const auto focused = editor.hasKeyboardFocus (true) && ! editor.isReadOnly();
     g.setColour (editor.findColour (focused ? juce::TextEditor::focusedOutlineColourId
@@ -95,8 +95,8 @@ void CompanionLookAndFeel::drawTextEditorOutline (juce::Graphics& g, int width, 
                             palette::radius, focused ? 1.5f : 1.0f);
 }
 
-void CompanionLookAndFeel::drawTickBox (juce::Graphics& g, juce::Component& component, float x, float y, float w,
-                                        float h, bool ticked, bool isEnabled, bool highlighted, bool)
+void BrandLookAndFeel::drawTickBox (juce::Graphics& g, juce::Component& component, float x, float y, float w,
+                                    float h, bool ticked, bool isEnabled, bool highlighted, bool)
 {
     const juce::Rectangle<float> box (x + 1.0f, y + 1.0f, w - 2.0f, h - 2.0f);
     const auto alpha = isEnabled ? 1.0f : 0.4f;

@@ -15,11 +15,11 @@ namespace dpm
 /** The plugin. Audio passes through untouched; a copy is captured for the
     app's pre-listen, and the editor shows the linked project's to-dos.
 */
-class CompanionProcessor : public juce::AudioProcessor
+class PluginProcessor : public juce::AudioProcessor
 {
 public:
-    CompanionProcessor();
-    ~CompanionProcessor() override;
+    PluginProcessor();
+    ~PluginProcessor() override;
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
@@ -69,7 +69,7 @@ private:
     std::atomic<double> playhead { -1.0 };
     TestTransport testTransport;    // Standalone only
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CompanionProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };
 
 } // namespace dpm

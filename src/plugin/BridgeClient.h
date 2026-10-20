@@ -1,13 +1,13 @@
 #pragma once
 
-#include "core/CompanionSession.h"
+#include "core/BridgeSession.h"
 
 #include <juce_events/juce_events.h>
 
 namespace dpm
 {
 
-/** Runs a CompanionSession on the message thread: polls the bridge folder,
+/** Runs a BridgeSession on the message thread: polls the bridge folder,
     keeps the host context up to date, links, delivers, and tells the editor
     when something changed.
 
@@ -81,7 +81,7 @@ private:
     void readHostContext();
 
     juce::CriticalSection lock;
-    CompanionSession session;
+    BridgeSession session;
     LastTakeReport lastTakeReport;
     int ticks = 0;
 

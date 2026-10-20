@@ -78,7 +78,7 @@ jobs:
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build tests
-        run: cmake --build build --config Release --target DPMCompanionTests --parallel
+        run: cmake --build build --config Release --target DAWProjectManagerTests --parallel
 
       - name: Run tests
         run: ctest --test-dir build -C Release --output-on-failure
@@ -154,15 +154,15 @@ jobs:
           -DDPM_BUILD_STANDALONE=${{ startsWith(github.ref, 'refs/tags/v') && 'OFF' || 'ON' }}
 
       - name: Build VST3
-        run: cmake --build build --config Release --target DPMCompanion_VST3 --parallel
+        run: cmake --build build --config Release --target DAWProjectManager_VST3 --parallel
 
       - name: Build AU (macOS)
         if: runner.os == 'macOS'
-        run: cmake --build build --config Release --target DPMCompanion_AU --parallel
+        run: cmake --build build --config Release --target DAWProjectManager_AU --parallel
 
       - name: Build Standalone for testers (PR or manual run)
         if: "!startsWith(github.ref, 'refs/tags/v')"
-        run: cmake --build build --config Release --target DPMCompanion_Standalone --parallel
+        run: cmake --build build --config Release --target DAWProjectManager_Standalone --parallel
 
       # pluginval at its strictest: open/close, editor, state save/restore,
       # audio processing at many sample rates and block sizes, threading and
@@ -189,13 +189,13 @@ jobs:
             *)       PV="xvfb-run -a pluginval/pluginval" ;;
           esac
           $PV --strictness-level 10 --validate-in-process --timeout-ms 900000 \
-            --validate "build/DPMCompanion_artefacts/Release/VST3/DAW Project Manager.vst3"
+            --validate "build/DAWProjectManager_artefacts/Release/VST3/DAW Project Manager.vst3"
 
       - name: Validate AU with auval (macOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p ~/Library/Audio/Plug-Ins/Components
-          cp -R "build/DPMCompanion_artefacts/Release/AU/DAW Project Manager.component" ~/Library/Audio/Plug-Ins/Components/
+          cp -R "build/DAWProjectManager_artefacts/Release/AU/DAW Project Manager.component" ~/Library/Audio/Plug-Ins/Components/
           killall -9 AudioComponentRegistrar || true
           auval -v aufx Dpmc Bnpr
 
@@ -232,7 +232,7 @@ jobs:
           New-Item -ItemType Directory -Force dist | Out-Null
           Move-Item Output/DAW_Project_Manager_Plugin_Installer_v$env:APP_VERSION.exe dist/
           $zip = "dist/DAW_Project_Manager_Plugin_Windows_VST3_v$env:APP_VERSION.zip"
-          Compress-Archive -Path "build/DPMCompanion_artefacts/Release/VST3/DAW Project Manager.vst3" -DestinationPath $zip
+          Compress-Archive -Path "build/DAWProjectManager_artefacts/Release/VST3/DAW Project Manager.vst3" -DestinationPath $zip
 
       - name: Package (Linux)
         if: runner.os == 'Linux'
@@ -284,5 +284,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: DAW_Project_Manager_Plugin_Standalone_${{ runner.os }}_${{ steps.version.outputs.ref_name }}
-          path: build/DPMCompanion_artefacts/Release/Standalone/
+          path: build/DAWProjectManager_artefacts/Release/Standalone/
           retention-days: 7

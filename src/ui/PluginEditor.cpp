@@ -36,7 +36,7 @@ void LevelMeter::paint (juce::Graphics& g)
     g.fillRoundedRectangle (fill, bounds.getHeight() * 0.5f);
 }
 
-// --- CompanionEditor -------------------------------------------------------------
+// --- PluginEditor -------------------------------------------------------------
 
 namespace
 {
@@ -69,7 +69,7 @@ namespace
     constexpr int modeAutomatic = 1, modeManual = 2, modeOff = 3;
 }
 
-CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor (p), processor (p)
+PluginEditor::PluginEditor (PluginProcessor& p) : AudioProcessorEditor (p), processor (p)
 {
     setLookAndFeel (&lookAndFeel);
 
@@ -94,7 +94,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     makePrimary (relinkButton);
     relinkButton.onClick = [this]
     {
-        processor.bridge().withSession ([this] (CompanionSession& s)
+        processor.bridge().withSession ([this] (BridgeSession& s)
         {
             if (auto* target = s.index() != nullptr ? s.index()->find (relinkTarget) : nullptr)
                 s.linkTo (*target, true);
@@ -121,7 +121,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
         const auto mode = modeBox.getSelectedId() == modeManual ? CaptureMode::manual
                         : modeBox.getSelectedId() == modeOff    ? CaptureMode::off
                                                                 : CaptureMode::automatic;
-        processor.bridge().withSession ([mode] (CompanionSession& s) { s.setCaptureMode (mode); });
+        processor.bridge().withSession ([mode] (BridgeSession& s) { s.setCaptureMode (mode); });
         processor.applyCaptureSettings();
         refreshCaptureStatus();
     };
@@ -131,7 +131,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     lengthBox.onChange = [this]
     {
         const auto seconds = lengthBox.getSelectedId();
-        processor.bridge().withSession ([seconds] (CompanionSession& s) { s.setCaptureMaxSeconds (seconds); });
+        processor.bridge().withSession ([seconds] (BridgeSession& s) { s.setCaptureMaxSeconds (seconds); });
         processor.applyCaptureSettings();
     };
 
@@ -178,7 +178,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     reloadNotesButton.setButtonText (TRANS ("Reload"));
     reloadNotesButton.onClick = [this]
     {
-        notesLoaded = processor.bridge().withSession ([] (CompanionSession& s) { return s.notes(); });
+        notesLoaded = processor.bridge().withSession ([] (BridgeSession& s) { return s.notes(); });
         notesEditor.setText (notesLoaded, juce::dontSendNotification);
         refreshNotesStatus();
     };
@@ -187,7 +187,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
         addChildComponent (c);
     todoList.onToggle = [this] (const juce::String& todoId, bool completed)
     {
-        processor.bridge().withSession ([&] (CompanionSession& s) { s.setTodoCompleted (todoId, completed); });
+        processor.bridge().withSession ([&] (BridgeSession& s) { s.setTodoCompleted (todoId, completed); });
         processor.bridge().changed();
     };
     todoInput.setTextToShowWhenEmpty (TRANS ("Add a to-do..."), palette::textTertiary);
@@ -201,7 +201,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     stampToggle.onClick = [this]
     {
         const auto on = stampToggle.getToggleState();
-        processor.bridge().withSession ([on] (CompanionSession& s) { s.setStampTodosWithTime (on); });
+        processor.bridge().withSession ([on] (BridgeSession& s) { s.setStampTodosWithTime (on); });
     };
     for (auto* c : std::initializer_list<juce::Component*> { &todoList, &todoInput, &addTodoButton, &stampToggle })
         addAndMakeVisible (c);
@@ -217,7 +217,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
 
     picker.rowsFor = [this] (const juce::String& query)
     {
-        return processor.bridge().withSession ([&query] (CompanionSession& s)
+        return processor.bridge().withSession ([&query] (BridgeSession& s)
         {
             return s.index() != nullptr ? buildPickerRows (*s.index(), s.suggestions(), query)
                                         : std::vector<PickerRow> {};
@@ -225,7 +225,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     };
     picker.onPick = [this] (const protocol::ProjectRef& ref)
     {
-        processor.bridge().withSession ([&ref] (CompanionSession& s)
+        processor.bridge().withSession ([&ref] (BridgeSession& s)
         {
             if (auto* project = s.index() != nullptr ? s.index()->find (ref) : nullptr)
                 s.linkTo (*project, true);
@@ -235,7 +235,7 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     };
     picker.onUnlink = [this]
     {
-        processor.bridge().withSession ([] (CompanionSession& s) { s.unlink(); });
+        processor.bridge().withSession ([] (BridgeSession& s) { s.unlink(); });
         showPicker (false);
         processor.bridge().changed();
     };
@@ -261,18 +261,18 @@ CompanionEditor::CompanionEditor (CompanionProcessor& p) : AudioProcessorEditor 
     startTimerHz (20);
 }
 
-CompanionEditor::~CompanionEditor()
+PluginEditor::~PluginEditor()
 {
     processor.bridge().removeChangeListener (this);
     setLookAndFeel (nullptr);
 }
 
-void CompanionEditor::changeListenerCallback (juce::ChangeBroadcaster*)
+void PluginEditor::changeListenerCallback (juce::ChangeBroadcaster*)
 {
     refreshFromSession();
 }
 
-void CompanionEditor::refreshFromSession()
+void PluginEditor::refreshFromSession()
 {
     struct Snapshot
     {
@@ -283,13 +283,13 @@ void CompanionEditor::refreshFromSession()
         juce::String relinkName;
         protocol::ProjectRef relinkRef;
         std::vector<TodoView> todos;
-        CompanionState state;
+        PluginState state;
         int undelivered = 0;
-        std::optional<CompanionRelease> update;
+        std::optional<PluginRelease> update;
         juce::String notes;
     };
 
-    const auto snap = processor.bridge().withSession ([] (CompanionSession& s)
+    const auto snap = processor.bridge().withSession ([] (BridgeSession& s)
     {
         Snapshot out;
         out.hasIndex = s.index() != nullptr;
@@ -401,10 +401,10 @@ void CompanionEditor::refreshFromSession()
     repaint();
 }
 
-void CompanionEditor::refreshCaptureStatus()
+void PluginEditor::refreshCaptureStatus()
 {
     auto& engine = processor.capture();
-    const auto settings = processor.bridge().withSession ([] (CompanionSession& s) { return s.state(); });
+    const auto settings = processor.bridge().withSession ([] (BridgeSession& s) { return s.state(); });
     const auto& mode = settings.capture.mode;
     const auto recording = engine.isRecording();
 
@@ -468,17 +468,17 @@ void CompanionEditor::refreshCaptureStatus()
     captureStatus.setColour (juce::Label::textColourId, colour);
 }
 
-void CompanionEditor::timerCallback()
+void PluginEditor::timerCallback()
 {
     meter.push (processor.capture().takeMeterPeak());
     refreshCaptureStatus();
 }
 
-void CompanionEditor::showPicker (bool show)
+void PluginEditor::showPicker (bool show)
 {
     if (show)
     {
-        const auto state = processor.bridge().withSession ([] (CompanionSession& s)
+        const auto state = processor.bridge().withSession ([] (BridgeSession& s)
         {
             return std::pair { s.index() != nullptr, s.state().project.isLinked() };
         });
@@ -492,7 +492,7 @@ void CompanionEditor::showPicker (bool show)
     }
 }
 
-void CompanionEditor::showNotes (bool notes)
+void PluginEditor::showNotes (bool notes)
 {
     showingNotes = notes;
     todosTab.setToggleState (! notes, juce::dontSendNotification);
@@ -506,9 +506,9 @@ void CompanionEditor::showNotes (bool notes)
     repaint (tabsRow);
 }
 
-void CompanionEditor::refreshNotesStatus()
+void PluginEditor::refreshNotesStatus()
 {
-    const auto [pending, appNotes] = processor.bridge().withSession ([] (CompanionSession& s)
+    const auto [pending, appNotes] = processor.bridge().withSession ([] (BridgeSession& s)
     {
         return std::pair { s.notesPending(), s.notes() };
     });
@@ -528,21 +528,21 @@ void CompanionEditor::refreshNotesStatus()
     saveNotesButton.setEnabled (notesDirty());
 }
 
-void CompanionEditor::saveNotes()
+void PluginEditor::saveNotes()
 {
     const auto text = notesEditor.getText();
-    const auto saved = processor.bridge().withSession ([&text] (CompanionSession& s) { return s.setNotes (text); });
+    const auto saved = processor.bridge().withSession ([&text] (BridgeSession& s) { return s.setNotes (text); });
     notesLoaded = text;
     if (saved)
         processor.bridge().changed();
     refreshNotesStatus();
 }
 
-void CompanionEditor::addTodo()
+void PluginEditor::addTodo()
 {
     const auto text = todoInput.getText();
     const auto playhead = processor.playheadSeconds();
-    const auto added = processor.bridge().withSession ([&] (CompanionSession& s) { return s.addTodo (text, playhead); });
+    const auto added = processor.bridge().withSession ([&] (BridgeSession& s) { return s.addTodo (text, playhead); });
 
     if (added)
     {
@@ -551,7 +551,7 @@ void CompanionEditor::addTodo()
     }
 }
 
-void CompanionEditor::paint (juce::Graphics& g)
+void PluginEditor::paint (juce::Graphics& g)
 {
     g.fillAll (palette::background);
     drawBrandStripe (g, stripe.toFloat());
@@ -589,7 +589,7 @@ void CompanionEditor::paint (juce::Graphics& g)
     g.fillRoundedRectangle (openTab.getBounds().withTop (tabsRow.getBottom() - 2).withHeight (2).toFloat(), 1.0f);
 }
 
-void CompanionEditor::resized()
+void PluginEditor::resized()
 {
     auto bounds = getLocalBounds();
     if (testPanel != nullptr)

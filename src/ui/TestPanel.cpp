@@ -1,6 +1,6 @@
 #include "TestPanel.h"
 
-#include "CompanionLookAndFeel.h"
+#include "BrandLookAndFeel.h"
 #include "core/TodoBook.h"
 
 namespace dpm
@@ -18,7 +18,7 @@ namespace
     }
 }
 
-TestPanel::TestPanel (CompanionProcessor& p) : processor (p)
+TestPanel::TestPanel (PluginProcessor& p) : processor (p)
 {
     heading.setText ("STANDALONE TEST PANEL" + detailSeparator + "a pretend DAW", juce::dontSendNotification);
     heading.setFont (juce::FontOptions (11.0f, juce::Font::bold));

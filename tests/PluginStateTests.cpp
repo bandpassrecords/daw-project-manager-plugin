@@ -1,12 +1,12 @@
 #include "TestHelpers.h"
 
-#include "core/CompanionState.h"
+#include "core/PluginState.h"
 
 using namespace dpm;
 
 TEST_CASE ("The saved state survives a round trip through XML, as the DAW stores it", "[state]")
 {
-    auto s = CompanionState::fresh();
+    auto s = PluginState::fresh();
     s.project = { "p1", "prof1", "My Song", "C:\\Music\\My Song.cpr" };
     s.linkedByUser = true;
     s.capture.mode = CaptureMode::manual;
@@ -34,7 +34,7 @@ TEST_CASE ("The saved state survives a round trip through XML, as the DAW stores
 
     const auto xml = s.toValueTree().createXml();
     REQUIRE (xml != nullptr);
-    const auto back = CompanionState::fromValueTree (juce::ValueTree::fromXml (*xml));
+    const auto back = PluginState::fromValueTree (juce::ValueTree::fromXml (*xml));
 
     CHECK (back.instanceId == s.instanceId);
     CHECK (back.project.sameProject (s.project));
@@ -59,8 +59,8 @@ TEST_CASE ("The saved state survives a round trip through XML, as the DAW stores
 
 TEST_CASE ("A state from nowhere, or another plugin, falls back to defaults with a new instance id", "[state]")
 {
-    const auto a = CompanionState::fromValueTree (juce::ValueTree ("SomethingElse"));
-    const auto b = CompanionState::fromValueTree ({});
+    const auto a = PluginState::fromValueTree (juce::ValueTree ("SomethingElse"));
+    const auto b = PluginState::fromValueTree ({});
     CHECK (a.instanceId.isNotEmpty());
     CHECK (a.instanceId != b.instanceId);
     CHECK_FALSE (a.project.isLinked());
@@ -71,12 +71,12 @@ TEST_CASE ("A state from nowhere, or another plugin, falls back to defaults with
 
 TEST_CASE ("Values the plugin doesn't offer are not restored", "[state]")
 {
-    auto tree = CompanionState::fresh().toValueTree();
+    auto tree = PluginState::fresh().toValueTree();
     tree.getChildWithName ("Capture").setProperty ("maxSeconds", 7, nullptr);
     tree.getChildWithName ("Capture").setProperty ("mode", "sideways", nullptr);
     tree.setProperty ("linkedByUser", true, nullptr);   // with no project linked
 
-    const auto s = CompanionState::fromValueTree (tree);
+    const auto s = PluginState::fromValueTree (tree);
     CHECK (s.capture.maxSeconds == 60);
     CHECK (s.capture.mode == CaptureMode::automatic);
     CHECK_FALSE (s.linkedByUser);
@@ -84,12 +84,12 @@ TEST_CASE ("Values the plugin doesn't offer are not restored", "[state]")
 
 TEST_CASE ("Pending ops missing their ids or project are dropped on load", "[state]")
 {
-    auto s = CompanionState::fresh();
+    auto s = PluginState::fresh();
     PendingTodoOp op;
     op.opId = "op1";
     op.todoId = "t1";
     op.text = "no project";
     s.pendingTodos = { op };
 
-    CHECK (CompanionState::fromValueTree (s.toValueTree()).pendingTodos.empty());
+    CHECK (PluginState::fromValueTree (s.toValueTree()).pendingTodos.empty());
 }

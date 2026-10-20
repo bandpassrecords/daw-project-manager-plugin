@@ -13,7 +13,7 @@ plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-m
   new feature includes tests covering its logic in full.
 - Run the whole suite before every commit; commit only when it passes:
   ```
-  cmake --build build --config Debug --target DPMCompanionTests
+  cmake --build build --config Debug --target DAWProjectManagerTests
   ctest --test-dir build -C Debug --output-on-failure
   ```
 - CI runs the suite on Linux, Windows and macOS (`unit_tests` in
@@ -26,7 +26,7 @@ plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-m
 
 ### The protocol is a contract with the app
 - `docs/PROTOCOL.md` is the contract; `BridgeProtocol`, `ProjectIndex`,
-  `CompanionSession` and `Outbox` implement this side of it. Change them
+  `BridgeSession` and `Outbox` implement this side of it. Change them
   together, in the same commit, and the app side with them.
 - Projects are matched by **profile and id, never id alone** — the app's rule
   (one id can sit in two profiles).
@@ -57,19 +57,27 @@ plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-m
 
 ### The name
 - DAWs list the plugin as **DAW Project Manager** (by BandPass Records); its
-  downloads are "DAW Project Manager Plugin". It was called DPM Companion
-  until v0.1.x, and some internal names keep that on purpose: hosts find a
-  saved plugin by its codes (`Bnpr`/`Dpmc`) and the macOS bundle id, an
-  update finds its uninstaller in `{autopf}\DPM Companion`, and the app
-  accepts both names. Never change those. The CMake targets (`DPMCompanion_*`)
-  and the code's class names just weren't worth the churn.
+  downloads are "DAW Project Manager Plugin". Don't call it "companion" in
+  new names, text or docs.
+- It was called DPM Companion until v0.1.x. These keep that name on purpose,
+  because something outside this code depends on them — never change them:
+  - the plugin codes (`Bnpr`/`Dpmc`) and the macOS bundle id
+    `com.bandpassrecords.dpm.companion`: hosts find a saved plugin by them,
+    and macOS installs by the bundle id;
+  - `DPMCompanionState`, the saved state's tag in DAW projects;
+  - the `companion` field of `index.json` and the app's
+    `preview_songs/companion/`: the app's names, in the contract;
+  - `{autopf}\DPM Companion`, where an update finds the uninstaller it
+    replaces;
+  - the old repository's release links (`isReleasePageUrl`), which older
+    apps still send.
 - The installers remove a `DPM Companion` bundle left from before, or the DAW
   would list the plugin twice.
 
 ### New state fields
-- `CompanionState` is saved in the DAW project (`getStateInformation`). A new
+- `PluginState` is saved in the DAW project (`getStateInformation`). A new
   field gets a default for older projects in `fromValueTree` and a round-trip
-  check in `CompanionStateTests`.
+  check in `PluginStateTests`.
 - Ask per field whether it belongs in the DAW project at all: a device-local
   preference doesn't (there are none yet).
 
@@ -77,7 +85,7 @@ plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-m
 
 ## How it fits together
 
-- `BridgeClient` (message thread, 2 s timer) drives one `CompanionSession`
+- `BridgeClient` (message thread, 2 s timer) drives one `BridgeSession`
   per instance: re-read `index.json`/`launch.json` when they change, read the
   host's window title, auto-link, deliver the outbox.
 - Linking: `rankProjects` scores the window title (path > file name > name as
@@ -92,13 +100,13 @@ plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-m
   judges them (`judgeTake`) and moves keepers into `captures/`.
 - Presence: after its hello an instance keeps `instances/<runId>.json` fresh
   (every 10 s, `BridgeClient`) and says goodbye when destroyed, relinked or
-  unlinked (`CompanionSession::sayGoodbye`, `goodbyeTo`). The app ends work
+  unlinked (`BridgeSession::sayGoodbye`, `goodbyeTo`). The app ends work
   sessions on it, so: `runId` is per running instance and never saved (copies
   of a project share the saved instance id), and an instance that never said
   hello — a host's plug-in scan — never says goodbye.
 - Stamped to-dos use the app's own format, `[MM:SS] text`
   (`playback_todo_utils.dart`). Keep them identical.
-- UI colours are the app's Classic Dark (`palette` in `CompanionLookAndFeel.h`),
+- UI colours are the app's Classic Dark (`palette` in `BrandLookAndFeel.h`),
   with the app icon's colours (`brand`) for accents: orange for the one main
   action of a section (`makePrimary`), navy for selection. The mark itself is
   `resources/brand/logo.svg`; `icon.png` and the installer's `icon.ico` are
@@ -111,7 +119,7 @@ plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-m
 ### Building
 ```
 cmake -S . -B build                         # downloads JUCE 9.0.4 and Catch2
-cmake --build build --config Release --target DPMCompanion_VST3
+cmake --build build --config Release --target DAWProjectManager_VST3
 cmake -S . -B build -DDPM_BUILD_STANDALONE=ON   # a Standalone, to look at the UI
 ```
 Pass `-DFETCHCONTENT_SOURCE_DIR_JUCE=<checkout>` to build against a local JUCE.
@@ -121,7 +129,7 @@ so nothing touches your real app library.
 ### Testing without a DAW: the Standalone and its test panel
 `-DDPM_BUILD_STANDALONE=ON` builds `DAW Project Manager.exe`/`.app`, with a **test
 panel** (`src/ui/TestPanel.*`) that only the Standalone shows
-(`CompanionProcessor::isStandalone`): a pretend DAW.
+(`PluginProcessor::isStandalone`): a pretend DAW.
 - **Transport:** Play/Stop, Rewind, Loop, and a test tone (`TestTransport`;
   JUCE mutes the Standalone's input).
 - **Host:** the DAW's name and window title, for trying auto-linking.
@@ -135,7 +143,7 @@ TRANS()**. Anything a user of the VST3/AU sees stays translated.
 
 ### Validating
 ```
-pluginval --strictness-level 10 --validate-in-process --validate "build/DPMCompanion_artefacts/Release/VST3/DAW Project Manager.vst3"
+pluginval --strictness-level 10 --validate-in-process --validate "build/DAWProjectManager_artefacts/Release/VST3/DAW Project Manager.vst3"
 ```
 CI runs this on every platform, plus `auval` on macOS.
 
@@ -162,8 +170,8 @@ CI runs this on every platform, plus `auval` on macOS.
 | Message format, ISO times | `src/core/BridgeProtocol.*` |
 | `index.json` / `launch.json` | `src/core/ProjectIndex.*` |
 | Which project is open | `src/core/ProjectMatcher.*` |
-| Everything one instance does with the bridge | `src/core/CompanionSession.*` |
-| Saved state | `src/core/CompanionState.*` |
+| Everything one instance does with the bridge | `src/core/BridgeSession.*` |
+| Saved state | `src/core/PluginState.*` |
 | To-do merging and acknowledgement | `src/core/TodoBook.*` |
 | Capture decisions / threading / FLAC | `src/core/CapturePolicy.*`, `CaptureEngine.*`, `CaptureWriter.*` |
 | Host window title (Windows, macOS) | `src/platform/HostWindowTitle*` |

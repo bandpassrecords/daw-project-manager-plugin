@@ -19,7 +19,7 @@ class TestPanel : public juce::Component,
                   private juce::Timer
 {
 public:
-    explicit TestPanel (CompanionProcessor& processor);
+    explicit TestPanel (PluginProcessor& processor);
 
     static constexpr int preferredHeight = 150;
 
@@ -31,7 +31,7 @@ private:
     void applyHost();
     void refresh();
 
-    CompanionProcessor& processor;
+    PluginProcessor& processor;
 
     juce::Label heading, position, hostLabel, titleLabel, status;
     juce::TextButton playButton, rewindButton;

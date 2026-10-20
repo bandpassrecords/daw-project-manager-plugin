@@ -1,6 +1,6 @@
 #include "ProjectPicker.h"
 
-#include "CompanionLookAndFeel.h"
+#include "BrandLookAndFeel.h"
 
 namespace dpm
 {

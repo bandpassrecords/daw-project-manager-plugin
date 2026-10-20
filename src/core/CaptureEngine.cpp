@@ -13,7 +13,7 @@ namespace
 }
 
 CaptureEngine::CaptureEngine (juce::File folder, juce::String tag, TakeCallback callback)
-    : juce::Thread ("DPM Companion capture writer"),
+    : juce::Thread ("DAW Project Manager capture writer"),
       takeFolder (std::move (folder)),
       instanceTag (std::move (tag)),
       onTakeFinished (std::move (callback))

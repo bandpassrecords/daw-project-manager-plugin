@@ -20,7 +20,7 @@ struct TempDir
 
     TempDir()
         : dir (juce::File::getSpecialLocation (juce::File::tempDirectory)
-                   .getChildFile ("dpm-companion-tests")
+                   .getChildFile ("daw-project-manager-plugin-tests")
                    .getChildFile (juce::Uuid().toString()))
     {
         dir.createDirectory();

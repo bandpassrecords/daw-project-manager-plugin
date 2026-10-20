@@ -152,7 +152,7 @@ void BridgeClient::restoreState (const juce::ValueTree& tree)
 {
     {
         const juce::ScopedLock sl (lock);
-        session.restore (CompanionState::fromValueTree (tree));
+        session.restore (PluginState::fromValueTree (tree));
     }
     sendChangeMessage();    // async: safe from any thread
 }

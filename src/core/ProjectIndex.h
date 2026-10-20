@@ -49,7 +49,7 @@ struct IndexedProject
     (the plugin itself never goes on the network) and leaves it out when it
     doesn't check — update checks off, or no network.
 */
-struct CompanionRelease
+struct PluginRelease
 {
     juce::String version;   // "0.2.0"
     juce::String url;       // the release page
@@ -61,7 +61,7 @@ struct ProjectIndex
     int schema = 0;
     juce::Time generatedAt;
     juce::String appVersion;
-    std::optional<CompanionRelease> latestRelease;
+    std::optional<PluginRelease> latestRelease;
     std::vector<IndexedProject> projects;
 
     /** Ids of the plugin messages the app applied lately: how an edit learns

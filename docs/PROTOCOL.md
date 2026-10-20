@@ -11,7 +11,7 @@ work in the DAW, and the plugin must keep working then: changes wait in the
 outbox, or in the DAW project itself, until the app runs. The plugin stays
 simple, and every linking decision stays in the app, as issue #118 proposed.
 
-`src/core/BridgeProtocol.*`, `ProjectIndex.*` and `CompanionSession.*` implement
+`src/core/BridgeProtocol.*`, `ProjectIndex.*` and `BridgeSession.*` implement
 the plugin side. **This file and that code change together.**
 
 ## Where the bridge folder is
@@ -113,7 +113,8 @@ learns they arrived, see [Acknowledgement](#acknowledgement)).
 - `applied` (top level) lists the ids of the plugin messages the app handled
   in the last 30 minutes, whatever came of them. A notes edit is confirmed by
   its id appearing here.
-- `companion` (optional) names the newest plugin release:
+- `companion` (optional; named after the plugin's old name, DPM Companion)
+  names the newest plugin release:
   `{ "latestVersion": "0.2.0", "releaseUrl": "https://github.com/bandpassrecords/daw-project-manager-plugin/releases/tag/v0.2.0" }`.
   The app looks it up on GitHub (the plugin itself never goes on the network)
   at most once a day, only when the user's update checks are on and only in

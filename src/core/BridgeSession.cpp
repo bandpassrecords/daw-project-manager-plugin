@@ -1,4 +1,4 @@
-#include "CompanionSession.h"
+#include "BridgeSession.h"
 
 #include "CaptureNaming.h"
 #include "Version.h"
@@ -9,16 +9,16 @@
 namespace dpm
 {
 
-CompanionSession::CompanionSession (BridgeFolder folder, Clock clock)
+BridgeSession::BridgeSession (BridgeFolder folder, Clock clock)
     : bridge (std::move (folder)),
       now (std::move (clock)),
       outbox (bridge.outboxDir()),
-      current (CompanionState::fresh())
+      current (PluginState::fresh())
 {
     startedAt = now();
 }
 
-void CompanionSession::restore (CompanionState saved)
+void BridgeSession::restore (PluginState saved)
 {
     // The host swapped this instance's state for another project's: the app
     // must hear that it left the one it was in.
@@ -33,7 +33,7 @@ void CompanionSession::restore (CompanionState saved)
         adoptIndexDetails();
 }
 
-void CompanionSession::setCaptureMaxSeconds (int seconds)
+void BridgeSession::setCaptureMaxSeconds (int seconds)
 {
     const auto& choices = CaptureSettings::lengthChoices();
     if (std::find (choices.begin(), choices.end(), seconds) != choices.end())
@@ -61,7 +61,7 @@ namespace
     }
 }
 
-bool CompanionSession::refresh()
+bool BridgeSession::refresh()
 {
     bool changed = false;
 
@@ -104,7 +104,7 @@ bool CompanionSession::refresh()
     return changed;
 }
 
-void CompanionSession::adoptIndexDetails()
+void BridgeSession::adoptIndexDetails()
 {
     // A project renamed or moved in the app keeps its link; take the new
     // name and path so messages carry them.
@@ -117,12 +117,12 @@ void CompanionSession::adoptIndexDetails()
 
 // --- Linking ------------------------------------------------------------------
 
-void CompanionSession::setHostContext (const protocol::HostContext& context)
+void BridgeSession::setHostContext (const protocol::HostContext& context)
 {
     host = context;
 }
 
-std::vector<MatchCandidate> CompanionSession::suggestions() const
+std::vector<MatchCandidate> BridgeSession::suggestions() const
 {
     if (! loadedIndex)
         return {};
@@ -135,7 +135,7 @@ std::vector<MatchCandidate> CompanionSession::suggestions() const
     return rankProjects (*loadedIndex, ctx);
 }
 
-bool CompanionSession::autoLink()
+bool BridgeSession::autoLink()
 {
     if (current.linkedByUser)
         return false;
@@ -148,7 +148,7 @@ bool CompanionSession::autoLink()
     return true;
 }
 
-const IndexedProject* CompanionSession::relinkSuggestion() const
+const IndexedProject* BridgeSession::relinkSuggestion() const
 {
     if (! current.linkedByUser)
         return nullptr;
@@ -157,7 +157,7 @@ const IndexedProject* CompanionSession::relinkSuggestion() const
     return match != nullptr && ! current.project.sameProject (match->ref()) ? match : nullptr;
 }
 
-void CompanionSession::linkTo (const IndexedProject& project, bool byUser)
+void BridgeSession::linkTo (const IndexedProject& project, bool byUser)
 {
     const auto changed = ! current.project.sameProject (project.ref());
 
@@ -176,7 +176,7 @@ void CompanionSession::linkTo (const IndexedProject& project, bool byUser)
     }
 }
 
-void CompanionSession::unlink()
+void BridgeSession::unlink()
 {
     current.project = {};
     current.linkedByUser = false;
@@ -187,14 +187,14 @@ void CompanionSession::unlink()
         goodbyeTo (presentIn);
 }
 
-const IndexedProject* CompanionSession::linkedProject() const
+const IndexedProject* BridgeSession::linkedProject() const
 {
     return loadedIndex ? loadedIndex->find (current.project) : nullptr;
 }
 
 // --- Updates --------------------------------------------------------------------
 
-std::optional<CompanionRelease> CompanionSession::availableUpdate (const juce::String& installedVersion) const
+std::optional<PluginRelease> BridgeSession::availableUpdate (const juce::String& installedVersion) const
 {
     if (! loadedIndex || ! loadedIndex->latestRelease)
         return std::nullopt;
@@ -209,12 +209,12 @@ std::optional<CompanionRelease> CompanionSession::availableUpdate (const juce::S
 
 // --- To-dos ---------------------------------------------------------------------
 
-std::vector<TodoView> CompanionSession::todos() const
+std::vector<TodoView> BridgeSession::todos() const
 {
     return buildTodoList (linkedProject(), current.pendingTodos, current.project);
 }
 
-bool CompanionSession::addTodo (const juce::String& text, std::optional<double> playheadSeconds)
+bool BridgeSession::addTodo (const juce::String& text, std::optional<double> playheadSeconds)
 {
     auto body = text.trim();
     if (body.isEmpty())
@@ -231,15 +231,15 @@ bool CompanionSession::addTodo (const juce::String& text, std::optional<double> 
     return true;
 }
 
-void CompanionSession::setTodoCompleted (const juce::String& todoId, bool completed)
+void BridgeSession::setTodoCompleted (const juce::String& todoId, bool completed)
 {
     addSetCompletedOp (current.pendingTodos, current.project, todoId, completed, now());
 }
 
 // --- Delivery -------------------------------------------------------------------
 
-protocol::Envelope CompanionSession::envelope (const char* type, const protocol::ProjectRef& project, juce::Time at,
-                                                const juce::String& messageId) const
+protocol::Envelope BridgeSession::envelope (const char* type, const protocol::ProjectRef& project, juce::Time at,
+                                            const juce::String& messageId) const
 {
     protocol::Envelope e;
     e.messageId = messageId.isNotEmpty() ? messageId : protocol::newId();
@@ -252,12 +252,12 @@ protocol::Envelope CompanionSession::envelope (const char* type, const protocol:
     return e;
 }
 
-bool CompanionSession::send (const protocol::Envelope& e, const juce::var& payload)
+bool BridgeSession::send (const protocol::Envelope& e, const juce::var& payload)
 {
     return outbox.write (protocol::toJson (e, payload), e.createdAt, e.messageId) != juce::File();
 }
 
-int CompanionSession::deliver()
+int BridgeSession::deliver()
 {
     int written = 0;
 
@@ -310,7 +310,7 @@ int CompanionSession::deliver()
     return written;
 }
 
-int CompanionSession::undeliveredCount() const
+int BridgeSession::undeliveredCount() const
 {
     return (int) std::count_if (current.pendingTodos.begin(), current.pendingTodos.end(),
                                 [] (const PendingTodoOp& op) { return ! op.delivered; })
@@ -320,30 +320,30 @@ int CompanionSession::undeliveredCount() const
 
 // --- Notes ----------------------------------------------------------------------
 
-juce::String CompanionSession::notes() const
+juce::String BridgeSession::notes() const
 {
     return currentNotes (linkedProject(), current.pendingNotes, current.project);
 }
 
-juce::String CompanionSession::appNotes() const
+juce::String BridgeSession::appNotes() const
 {
     auto* p = linkedProject();
     return p != nullptr ? p->notes : juce::String();
 }
 
-bool CompanionSession::notesPending() const
+bool BridgeSession::notesPending() const
 {
     return dpm::notesPending (current.pendingNotes, current.project);
 }
 
-bool CompanionSession::setNotes (const juce::String& text)
+bool BridgeSession::setNotes (const juce::String& text)
 {
     return addNotesEdit (current.pendingNotes, current.project, text, notes(), now());
 }
 
 // --- Presence -------------------------------------------------------------------
 
-void CompanionSession::heartbeat()
+void BridgeSession::heartbeat()
 {
     if (! presentIn.isLinked())
     {
@@ -355,14 +355,14 @@ void CompanionSession::heartbeat()
     writeFileAtomically (heartbeatFile(), protocol::heartbeatJson (e, now(), startedAt));
 }
 
-void CompanionSession::sayGoodbye()
+void BridgeSession::sayGoodbye()
 {
     if (presentIn.isLinked())
         goodbyeTo (presentIn);
     heartbeatFile().deleteFile();
 }
 
-void CompanionSession::goodbyeTo (const protocol::ProjectRef& project)
+void BridgeSession::goodbyeTo (const protocol::ProjectRef& project)
 {
     // Best effort and not queued: a goodbye that can't be written is covered
     // by the heartbeat going stale, which the app notices on its own.
@@ -394,7 +394,7 @@ bool moveIntoPlace (const juce::File& source, const juce::File& target)
     return false;
 }
 
-CompanionSession::CaptureOutcome CompanionSession::handleFinishedTake (const FinishedTakeFile& take)
+BridgeSession::CaptureOutcome BridgeSession::handleFinishedTake (const FinishedTakeFile& take)
 {
     CaptureOutcome outcome;
     outcome.verdict = judgeTake (take.summary, current.lastCapture);

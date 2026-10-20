@@ -47,10 +47,10 @@ namespace palette
 */
 inline const juce::String detailSeparator = juce::String::fromUTF8 ("  \xc2\xb7  ");
 
-class CompanionLookAndFeel : public juce::LookAndFeel_V4
+class BrandLookAndFeel : public juce::LookAndFeel_V4
 {
 public:
-    CompanionLookAndFeel();
+    BrandLookAndFeel();
 
     void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour& backgroundColour,
                                bool isMouseOverButton, bool isButtonDown) override;

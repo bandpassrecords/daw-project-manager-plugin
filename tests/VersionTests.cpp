@@ -1,6 +1,6 @@
 #include "TestHelpers.h"
 
-#include "core/CompanionSession.h"
+#include "core/BridgeSession.h"
 #include "core/Version.h"
 
 using namespace dpm;
@@ -32,20 +32,20 @@ namespace
     juce::String indexWithRelease (const char* version, const char* url)
     {
         auto json = juce::JSON::parse (test::indexJson ({ { "p1", "a", "Song", "C:\\Song.cpr" } }));
-        auto* companion = new juce::DynamicObject();
-        companion->setProperty ("latestVersion", version);
-        companion->setProperty ("releaseUrl", url);
-        json.getDynamicObject()->setProperty ("companion", juce::var (companion));
+        auto* plugin = new juce::DynamicObject();
+        plugin->setProperty ("latestVersion", version);
+        plugin->setProperty ("releaseUrl", url);
+        json.getDynamicObject()->setProperty ("companion", juce::var (plugin));
         return juce::JSON::toString (json);
     }
 
-    std::optional<CompanionRelease> updateFor (const juce::String& indexText, const char* installed)
+    std::optional<PluginRelease> updateFor (const juce::String& indexText, const char* installed)
     {
         test::TempDir tmp;
         const auto bridge = tmp.bridge();
         bridge.root.createDirectory();
         bridge.indexFile().replaceWithText (indexText);
-        CompanionSession session (bridge);
+        BridgeSession session (bridge);
         session.refresh();
         return session.availableUpdate (installed);
     }
@@ -96,7 +96,7 @@ TEST_CASE ("An app from before the repository's rename still offers the update",
 TEST_CASE ("No index, no update", "[version]")
 {
     test::TempDir tmp;
-    CompanionSession session (tmp.bridge());
+    BridgeSession session (tmp.bridge());
     session.refresh();
     CHECK_FALSE (session.availableUpdate ("0.0.1").has_value());
 }

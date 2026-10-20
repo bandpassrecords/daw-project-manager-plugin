@@ -6,14 +6,14 @@
 namespace dpm
 {
 
-juce::File CompanionProcessor::takeFolder()
+juce::File PluginProcessor::takeFolder()
 {
     // Takes are written outside the bridge folder and moved in only when
     // kept, so the app never sees one being recorded.
-    return juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("DPM Companion");
+    return juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("DAW Project Manager");
 }
 
-CompanionProcessor::CompanionProcessor()
+PluginProcessor::PluginProcessor()
     : AudioProcessor (BusesProperties()
                           .withInput ("Input", juce::AudioChannelSet::stereo(), true)
                           .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
@@ -35,29 +35,29 @@ CompanionProcessor::CompanionProcessor()
     applyCaptureSettings();
 }
 
-CompanionProcessor::~CompanionProcessor()
+PluginProcessor::~PluginProcessor()
 {
     engine.release();
 }
 
-void CompanionProcessor::applyCaptureSettings()
+void PluginProcessor::applyCaptureSettings()
 {
-    const auto settings = client->withSession ([] (CompanionSession& s) { return s.state().capture; });
+    const auto settings = client->withSession ([] (BridgeSession& s) { return s.state().capture; });
     engine.setMode (settings.mode);
     engine.setMaxSeconds (settings.maxSeconds);
 }
 
-void CompanionProcessor::prepareToPlay (double sampleRate, int)
+void PluginProcessor::prepareToPlay (double sampleRate, int)
 {
     engine.prepare (sampleRate, getTotalNumInputChannels());
 }
 
-void CompanionProcessor::releaseResources()
+void PluginProcessor::releaseResources()
 {
     engine.release();
 }
 
-bool CompanionProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool PluginProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
     const auto& out = layouts.getMainOutputChannelSet();
     if (out != juce::AudioChannelSet::mono() && out != juce::AudioChannelSet::stereo())
@@ -65,7 +65,7 @@ bool CompanionProcessor::isBusesLayoutSupported (const BusesLayout& layouts) con
     return out == layouts.getMainInputChannelSet();
 }
 
-void CompanionProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     juce::ScopedNoDenormals noDenormals;
 
@@ -100,24 +100,24 @@ void CompanionProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::M
     engine.process (buffer, transport);
 }
 
-std::optional<double> CompanionProcessor::playheadSeconds() const
+std::optional<double> PluginProcessor::playheadSeconds() const
 {
     const auto p = playhead.load();
     return p >= 0 ? std::optional (p) : std::nullopt;
 }
 
-juce::AudioProcessorEditor* CompanionProcessor::createEditor()
+juce::AudioProcessorEditor* PluginProcessor::createEditor()
 {
-    return new CompanionEditor (*this);
+    return new PluginEditor (*this);
 }
 
-void CompanionProcessor::getStateInformation (juce::MemoryBlock& destData)
+void PluginProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     if (auto xml = client->saveState().createXml())
         copyXmlToBinary (*xml, destData);
 }
 
-void CompanionProcessor::setStateInformation (const void* data, int sizeInBytes)
+void PluginProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
     {
@@ -130,5 +130,5 @@ void CompanionProcessor::setStateInformation (const void* data, int sizeInBytes)
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new dpm::CompanionProcessor();
+    return new dpm::PluginProcessor();
 }

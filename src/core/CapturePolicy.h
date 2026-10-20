@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CompanionState.h"
+#include "PluginState.h"
 
 namespace dpm
 {

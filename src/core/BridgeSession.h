@@ -2,7 +2,7 @@
 
 #include "BridgePaths.h"
 #include "CaptureEngine.h"
-#include "CompanionState.h"
+#include "PluginState.h"
 #include "Outbox.h"
 #include "ProjectMatcher.h"
 #include "NotesBook.h"
@@ -22,21 +22,21 @@ namespace dpm
     whole conversation with the app can be tested against a temp folder. The
     plugin drives it from the message thread (BridgeClient).
 */
-class CompanionSession
+class BridgeSession
 {
 public:
     using Clock = std::function<juce::Time()>;
 
-    explicit CompanionSession (BridgeFolder folder, Clock clock = [] { return juce::Time::getCurrentTime(); });
+    explicit BridgeSession (BridgeFolder folder, Clock clock = [] { return juce::Time::getCurrentTime(); });
 
     // --- State --------------------------------------------------------------
 
-    const CompanionState& state() const { return current; }
+    const PluginState& state() const { return current; }
 
     /** Restores a saved state (the DAW project being opened). A restored link
         says hello again: the app learns the project is open.
     */
-    void restore (CompanionState saved);
+    void restore (PluginState saved);
 
     void setCaptureMode (CaptureMode mode)  { current.capture.mode = mode; }
     void setCaptureMaxSeconds (int seconds);
@@ -84,7 +84,7 @@ public:
         at the plugin's own release page (a link anywhere else is ignored: the
         plugin opens it in the browser).
     */
-    std::optional<CompanionRelease> availableUpdate (const juce::String& installedVersion = DPM_VERSION_STRING) const;
+    std::optional<PluginRelease> availableUpdate (const juce::String& installedVersion = DPM_VERSION_STRING) const;
 
     // --- To-dos -----------------------------------------------------------------
 
@@ -182,7 +182,7 @@ private:
     BridgeFolder bridge;
     Clock now;
     Outbox outbox;
-    CompanionState current;
+    PluginState current;
     protocol::HostContext host;
 
     std::optional<ProjectIndex> loadedIndex;

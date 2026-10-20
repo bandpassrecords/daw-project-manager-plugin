@@ -16,7 +16,7 @@ endif()
 set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "macOS architectures")
 set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
 
-project(DPMCompanion VERSION ${DPM_VERSION} LANGUAGES C CXX)
+project(DAWProjectManager VERSION ${DPM_VERSION} LANGUAGES C CXX)
 
 if(APPLE)
     enable_language(OBJC OBJCXX)
@@ -52,8 +52,8 @@ set(DPM_CORE_SOURCES
     src/core/CaptureNaming.cpp
     src/core/CapturePolicy.cpp
     src/core/CaptureWriter.cpp
-    src/core/CompanionSession.cpp
-    src/core/CompanionState.cpp
+    src/core/BridgeSession.cpp
+    src/core/PluginState.cpp
     src/core/Localisation.cpp
     src/core/NotesBook.cpp
     src/core/Outbox.cpp
@@ -90,7 +90,7 @@ if(DPM_BUILD_STANDALONE)
     list(APPEND DPM_FORMATS Standalone)
 endif()
 
-juce_add_plugin(DPMCompanion
+juce_add_plugin(DAWProjectManager
     PRODUCT_NAME "DAW Project Manager"
     COMPANY_NAME "BandPass Records"
     COMPANY_WEBSITE "https://github.com/bandpassrecords/daw-project-manager"
@@ -109,7 +109,7 @@ juce_add_plugin(DPMCompanion
     AU_MAIN_TYPE kAudioUnitType_Effect
     COPY_PLUGIN_AFTER_BUILD FALSE)
 
-juce_add_binary_data(DPMCompanionData
+juce_add_binary_data(DAWProjectManagerData
     HEADER_NAME DPMBinaryData.h
     NAMESPACE DPMBinaryData
     SOURCES
@@ -128,26 +128,26 @@ if(APPLE)
     list(APPEND DPM_PLATFORM_SOURCES src/platform/HostWindowTitleMac.mm)
 endif()
 
-target_sources(DPMCompanion PRIVATE
+target_sources(DAWProjectManager PRIVATE
     ${DPM_CORE_SOURCES}
     ${DPM_PLATFORM_SOURCES}
     src/plugin/BridgeClient.cpp
     src/plugin/PluginProcessor.cpp
     src/plugin/Translations.cpp
-    src/ui/CompanionLookAndFeel.cpp
+    src/ui/BrandLookAndFeel.cpp
     src/ui/PluginEditor.cpp
     src/ui/ProjectPicker.cpp
     src/ui/TestPanel.cpp
     src/ui/TodoList.cpp)
 
-target_include_directories(DPMCompanion PRIVATE src)
-target_compile_definitions(DPMCompanion PUBLIC ${DPM_JUCE_DEFINITIONS}
+target_include_directories(DAWProjectManager PRIVATE src)
+target_compile_definitions(DAWProjectManager PUBLIC ${DPM_JUCE_DEFINITIONS}
     JUCE_VST3_CAN_REPLACE_VST2=0)
-target_compile_options(DPMCompanion PRIVATE ${DPM_WARNINGS})
+target_compile_options(DAWProjectManager PRIVATE ${DPM_WARNINGS})
 
-target_link_libraries(DPMCompanion
+target_link_libraries(DAWProjectManager
     PRIVATE
-        DPMCompanionData
+        DAWProjectManagerData
         juce::juce_audio_utils
         juce::juce_audio_formats
     PUBLIC
@@ -156,7 +156,7 @@ target_link_libraries(DPMCompanion
         juce::juce_recommended_warning_flags)
 
 if(APPLE)
-    target_link_libraries(DPMCompanion PRIVATE "-framework AppKit")
+    target_link_libraries(DAWProjectManager PRIVATE "-framework AppKit")
 endif()
 
 # ---------------------------------------------------------------------------
@@ -170,8 +170,8 @@ if(DPM_BUILD_TESTS)
         GIT_SHALLOW    TRUE)
     FetchContent_MakeAvailable(Catch2)
 
-    juce_add_console_app(DPMCompanionTests PRODUCT_NAME "DPMCompanionTests")
-    target_sources(DPMCompanionTests PRIVATE
+    juce_add_console_app(DAWProjectManagerTests PRODUCT_NAME "DAWProjectManagerTests")
+    target_sources(DAWProjectManagerTests PRIVATE
         ${DPM_CORE_SOURCES}
         tests/BridgePathsTests.cpp
         tests/BridgeProtocolTests.cpp
@@ -179,8 +179,8 @@ if(DPM_BUILD_TESTS)
         tests/CapturePolicyTests.cpp
         tests/CaptureEngineTests.cpp
         tests/CaptureWriterTests.cpp
-        tests/CompanionSessionTests.cpp
-        tests/CompanionStateTests.cpp
+        tests/BridgeSessionTests.cpp
+        tests/PluginStateTests.cpp
         tests/OutboxTests.cpp
         tests/PresenceTests.cpp
         tests/ProjectIndexTests.cpp
@@ -190,11 +190,11 @@ if(DPM_BUILD_TESTS)
         tests/TestTransportTests.cpp
         tests/TodoBookTests.cpp
         tests/VersionTests.cpp)
-    target_include_directories(DPMCompanionTests PRIVATE src tests)
-    target_compile_definitions(DPMCompanionTests PRIVATE ${DPM_JUCE_DEFINITIONS}
+    target_include_directories(DAWProjectManagerTests PRIVATE src tests)
+    target_compile_definitions(DAWProjectManagerTests PRIVATE ${DPM_JUCE_DEFINITIONS}
         DPM_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-    target_compile_options(DPMCompanionTests PRIVATE ${DPM_WARNINGS})
-    target_link_libraries(DPMCompanionTests PRIVATE
+    target_compile_options(DAWProjectManagerTests PRIVATE ${DPM_WARNINGS})
+    target_link_libraries(DAWProjectManagerTests PRIVATE
         Catch2::Catch2WithMain
         juce::juce_core
         juce::juce_data_structures
@@ -207,5 +207,5 @@ if(DPM_BUILD_TESTS)
     include(CTest)
     list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
     include(Catch)
-    catch_discover_tests(DPMCompanionTests)
+    catch_discover_tests(DAWProjectManagerTests)
 endif()

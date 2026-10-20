@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CompanionLookAndFeel.h"
+#include "BrandLookAndFeel.h"
 #include "ProjectPicker.h"
 #include "TestPanel.h"
 #include "TodoList.h"
@@ -22,13 +22,13 @@ private:
     bool recording = false;
 };
 
-class CompanionEditor : public juce::AudioProcessorEditor,
-                        private juce::ChangeListener,
-                        private juce::Timer
+class PluginEditor : public juce::AudioProcessorEditor,
+                     private juce::ChangeListener,
+                     private juce::Timer
 {
 public:
-    explicit CompanionEditor (CompanionProcessor&);
-    ~CompanionEditor() override;
+    explicit PluginEditor (PluginProcessor&);
+    ~PluginEditor() override;
 
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -45,8 +45,8 @@ private:
     void showNotes (bool notes);
     void refreshNotesStatus();
 
-    CompanionProcessor& processor;
-    CompanionLookAndFeel lookAndFeel;
+    PluginProcessor& processor;
+    BrandLookAndFeel lookAndFeel;
     juce::TooltipWindow tooltips { this, 600 };
 
     std::unique_ptr<juce::Drawable> logo;
@@ -89,7 +89,7 @@ private:
     bool recordingShown = false;
     juce::Rectangle<int> stripe, logoArea, statusPill, projectCard, captureCard, todoCard, tabsRow;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CompanionEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };
 
 } // namespace dpm

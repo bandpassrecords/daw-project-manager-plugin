@@ -1,4 +1,4 @@
-#include "CompanionState.h"
+#include "PluginState.h"
 
 #include <algorithm>
 
@@ -7,6 +7,7 @@ namespace dpm
 
 namespace ids
 {
+    // The plugin's old name (DPM Companion): saved in DAW projects, so it stays.
     static const juce::Identifier state ("DPMCompanionState");
     static const juce::Identifier stateVersion ("stateVersion");
     static const juce::Identifier instanceId ("instanceId");
@@ -89,7 +90,7 @@ namespace
     }
 }
 
-juce::ValueTree CompanionState::toValueTree() const
+juce::ValueTree PluginState::toValueTree() const
 {
     juce::ValueTree tree (ids::state);
     tree.setProperty (ids::stateVersion, currentStateVersion, nullptr);
@@ -141,7 +142,7 @@ juce::ValueTree CompanionState::toValueTree() const
     return tree;
 }
 
-CompanionState CompanionState::fromValueTree (const juce::ValueTree& tree)
+PluginState PluginState::fromValueTree (const juce::ValueTree& tree)
 {
     auto s = fresh();
     if (! tree.hasType (ids::state))
@@ -201,9 +202,9 @@ CompanionState CompanionState::fromValueTree (const juce::ValueTree& tree)
     return s;
 }
 
-CompanionState CompanionState::fresh()
+PluginState PluginState::fresh()
 {
-    CompanionState s;
+    PluginState s;
     s.instanceId = protocol::newId();
     return s;
 }

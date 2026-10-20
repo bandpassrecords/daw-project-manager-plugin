@@ -1,6 +1,6 @@
 #include "TestHelpers.h"
 
-#include "core/CompanionSession.h"
+#include "core/BridgeSession.h"
 #include "core/NotesBook.h"
 
 using namespace dpm;
@@ -101,12 +101,12 @@ TEST_CASE ("An undelivered edit is never dropped", "[notes]")
 
 TEST_CASE ("Notes edits survive saving the DAW project", "[notes][state]")
 {
-    auto s = CompanionState::fresh();
+    auto s = PluginState::fresh();
     s.project = song;
     addNotesEdit (s.pendingNotes, song, "Line 1\nLine \"2\" <&>", "old", test::fixedTime (3));
     s.pendingNotes[0].delivered = true;
 
-    const auto back = CompanionState::fromValueTree (juce::ValueTree::fromXml (*s.toValueTree().createXml()));
+    const auto back = PluginState::fromValueTree (juce::ValueTree::fromXml (*s.toValueTree().createXml()));
     REQUIRE (back.pendingNotes.size() == 1);
     CHECK (back.pendingNotes[0].text == "Line 1\nLine \"2\" <&>");
     CHECK (back.pendingNotes[0].baseText == "old");
@@ -121,7 +121,7 @@ TEST_CASE ("Notes travel to the app and back through the session", "[notes][sess
     test::TempDir tmp;
     const auto bridge = tmp.bridge();
     juce::Time clock = test::fixedTime();
-    CompanionSession session (bridge, [&clock] { return clock; });
+    BridgeSession session (bridge, [&clock] { return clock; });
 
     REQUIRE (bridge.root.createDirectory());
     REQUIRE (bridge.indexFile().replaceWithText (indexWithNotes ("Vocals: comp verse 2")));

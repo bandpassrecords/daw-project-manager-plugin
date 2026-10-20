@@ -1,6 +1,6 @@
 #include "TestHelpers.h"
 
-#include "core/CompanionSession.h"
+#include "core/BridgeSession.h"
 
 using namespace dpm;
 
@@ -11,7 +11,7 @@ namespace
         test::TempDir tmp;
         BridgeFolder bridge = tmp.bridge();
         juce::Time clock = test::fixedTime();
-        CompanionSession session { bridge, [this] { return clock; } };
+        BridgeSession session { bridge, [this] { return clock; } };
 
         Fixture()
         {
@@ -131,7 +131,7 @@ TEST_CASE ("A state for another project, loaded after hello, says goodbye to the
     f.link ("song");
     f.session.deliver();
 
-    auto state = CompanionState::fresh();
+    auto state = PluginState::fresh();
     state.project = { "other", "solo", "Night Drive", "" };
     f.session.restore (state);
     f.session.deliver();
@@ -166,7 +166,7 @@ TEST_CASE ("Two running copies of one project are two instances", "[presence]")
     // side by side, each copy must still come and go on its own.
     Fixture f;
     const auto saved = f.session.state();
-    CompanionSession copy (f.bridge, [&f] { return f.clock; });
+    BridgeSession copy (f.bridge, [&f] { return f.clock; });
     copy.restore (saved);
 
     CHECK (copy.state().instanceId == f.session.state().instanceId);

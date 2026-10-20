@@ -77,7 +77,7 @@ struct PendingNotesOp
 };
 
 /** One plugin instance's saved state. */
-struct CompanionState
+struct PluginState
 {
     juce::String instanceId;
     protocol::ProjectRef project;
@@ -96,9 +96,9 @@ struct CompanionState
     /** Missing or unreadable values fall back to the defaults; an empty
         instance id gets a fresh one.
     */
-    static CompanionState fromValueTree (const juce::ValueTree& tree);
+    static PluginState fromValueTree (const juce::ValueTree& tree);
 
-    static CompanionState fresh();
+    static PluginState fresh();
 };
 
 } // namespace dpm

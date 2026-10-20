@@ -6,7 +6,7 @@ set -euo pipefail
 
 VERSION="$1"
 OUT="$2"
-VST3="build/DPMCompanion_artefacts/Release/VST3/DAW Project Manager.vst3"
+VST3="build/DAWProjectManager_artefacts/Release/VST3/DAW Project Manager.vst3"
 
 mkdir -p "$OUT"
 WORK="$(mktemp -d)"
