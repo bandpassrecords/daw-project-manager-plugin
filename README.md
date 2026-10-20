@@ -10,7 +10,7 @@
   <a href="https://github.com/bandpassrecords/daw-project-manager-plugin/releases/latest"><img src="https://img.shields.io/github/v/release/bandpassrecords/daw-project-manager-plugin?label=release&color=FF6100" alt="Latest release"></a>
   <a href="https://github.com/bandpassrecords/daw-project-manager-plugin/actions/workflows/release.yml?query=branch%3Amain"><img src="https://github.com/bandpassrecords/daw-project-manager-plugin/actions/workflows/release.yml/badge.svg?branch=main" alt="CI"></a>
   <a href="https://github.com/bandpassrecords/daw-project-manager-plugin/releases"><img src="https://img.shields.io/github/downloads/bandpassrecords/daw-project-manager-plugin/total?color=FF6100" alt="Downloads"></a>
-  <img src="https://img.shields.io/badge/JUCE-9.0.4-8DC63F" alt="JUCE 9.0.4">
+  <img src="https://img.shields.io/badge/JUCE-9.0.4-8DC63F?logo=juce&logoColor=white" alt="JUCE 9.0.4">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-green" alt="AGPL-3.0 license"></a>
 </p>
 
@@ -31,6 +31,32 @@
 <p align="center"><a href="https://github.com/bandpassrecords/daw-project-manager">The app</a> · <a href="docs/PROTOCOL.md">How they talk</a> · <a href="docs/development.md">Build it yourself</a></p>
 
 <p align="center"><img src="resources/screenshots/plugin.png" alt="The plugin in a DAW: the linked project, pre-listen capture, and the project's to-dos" width="420"></p>
+
+## Works with your DAW
+
+<table>
+  <tr>
+    <td align="center" width="96"><img src="resources/daw/logos/ableton-live.png" height="40" alt=""><br><sub>Ableton Live</sub></td>
+    <td align="center" width="96"><img src="resources/daw/logos/cubase.png" height="40" alt=""><br><sub>Cubase</sub></td>
+    <td align="center" width="96"><img src="resources/daw/logos/fl-studio.png" height="40" alt=""><br><sub>FL Studio</sub></td>
+    <td align="center" width="96"><img src="resources/daw/logos/logic-pro.png" height="40" alt=""><br><sub>Logic Pro</sub></td>
+    <td align="center" width="96"><img src="resources/daw/logos/reaper.png" height="40" alt=""><br><sub>Reaper</sub></td>
+    <td align="center" width="96"><img src="resources/daw/logos/studio-one.png" height="40" alt=""><br><sub>Studio One</sub></td>
+    <td align="center" width="96"><img src="resources/daw/logos/bitwig-studio.png" height="40" alt=""><br><sub>Bitwig Studio</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="resources/daw/logos/nuendo.png" height="40" alt=""><br><sub>Nuendo</sub></td>
+    <td align="center"><img src="resources/daw/logos/cakewalk.png" height="40" alt=""><br><sub>Cakewalk</sub></td>
+    <td align="center"><img src="resources/daw/logos/tracktion-waveform.png" height="40" alt=""><br><sub>Waveform</sub></td>
+    <td align="center"><img src="resources/daw/logos/reason.png" height="40" alt=""><br><sub>Reason</sub></td>
+    <td align="center"><img src="resources/daw/logos/ardour.png" height="40" alt=""><br><sub>Ardour</sub></td>
+    <td align="center"><img src="resources/daw/logos/renoise.png" height="40" alt=""><br><sub>Renoise</sub></td>
+    <td align="center"><img src="resources/daw/logos/mixcraft.png" height="40" alt=""><br><sub>Mixcraft</sub></td>
+  </tr>
+</table>
+
+Any DAW that loads VST3 plug-ins, or AU on macOS (Logic Pro, GarageBand). Not
+Pro Tools, which only loads AAX.
 
 ## What it does
 
