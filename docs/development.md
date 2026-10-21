@@ -4,6 +4,11 @@ Needs CMake 3.22+ and a C++20 compiler (Visual Studio 2022, Xcode 15, GCC 11+);
 on Linux, [JUCE's dependencies](https://github.com/juce-framework/JUCE/blob/master/docs/Linux%20Dependencies.md).
 JUCE 9.0.4 and Catch2 are downloaded at configure time.
 
+On Windows, keep the checkout and its `build` folder on a short path (say,
+`C:\src\daw-project-manager-plugin`): JUCE's download nests deep inside
+`build/_deps`, and from a deep folder it passes Windows' 260-character path
+limit and the configure fails.
+
 ## Build
 
 ```
