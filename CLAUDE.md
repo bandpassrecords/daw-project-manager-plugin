@@ -111,7 +111,9 @@ plugin of [DAW Project Manager](https://github.com/bandpassrecords/daw-project-m
   with the app icon's colors (`brand`) for accents: orange for the one main
   action of a section (`makePrimary`), navy for selection. The mark itself is
   `resources/brand/logo.svg`; `icon.png` and the installer's `icon.ico` are
-  the app's own icon.
+  the app's own icon. The Standalone's icon, `standalone_icon.png`, is the
+  app's with a puzzle-piece badge, so it can't be mistaken for the app
+  (`scripts/make_standalone_icon.py`). Hosts show no icon for a VST3 or AU.
 
 ---
 

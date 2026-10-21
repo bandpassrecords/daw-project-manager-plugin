@@ -108,7 +108,9 @@ juce_add_plugin(DAWProjectManager
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS TRUE
-    ICON_BIG resources/brand/icon.png
+    # Hosts show no icon for a VST3 or AU: this is the Standalone's, the app's
+    # icon with a plug-in badge so the two can't be mistaken for each other.
+    ICON_BIG resources/brand/standalone_icon.png
     VST3_CATEGORIES Fx Analyzer
     AU_MAIN_TYPE kAudioUnitType_Effect
     COPY_PLUGIN_AFTER_BUILD FALSE)
