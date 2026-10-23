@@ -18,7 +18,7 @@
       "highlights": {
         "en": [
           "First release: a VST3 (and AU on macOS) plugin that pairs a DAW session with its project in DAW Project Manager.",
-          "Pre-listen capture: put it on the master bus and each playback pass is recorded as the project's preview song, without bouncing.",
+          "Pre-listen capture: put it on the master bus and each playback pass is recorded as the project's latest capture in DAW Project Manager, without bouncing.",
           "To-dos: see the project's to-dos while you work, tick them off and add new ones, optionally stamped with the playhead time.",
           "Finds the project on its own from the DAW's window title or the app's launch, with a search to pick it by hand.",
           "Tells you in its footer when a newer version is out, using the update check DAW Project Manager already does, so the plugin itself never goes online."

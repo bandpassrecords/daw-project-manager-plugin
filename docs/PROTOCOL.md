@@ -247,11 +247,15 @@ A pre-listen recording of the project, 24-bit FLAC, `file` relative to the
 bridge folder. The app (`plugin_bridge_service.dart`):
 
 1. copies it to `preview_songs/plugin/<project id>/`;
-2. makes it the project's preview song (the stack's, for a member), but only
-   when the project has no preview, its preview is an earlier capture, or its
-   preview is an auto-detected mixdown older than the capture. A preview the
-   user picked is never replaced;
-3. deletes the file in `captures/`, adopted or not.
+2. keeps it as the project's **latest capture** ("Latest capture" in the
+   app): a slot of its own beside the preview song, never in its place. It
+   never replaces a preview song or an auto-detected bounce. Only the newest
+   capture by `capturedAt` is kept: an older take arriving late is dropped,
+   and the one replaced is deleted unless the project now uses it as its
+   preview song. The user can make it the preview with "Use as preview
+   song". It syncs through Google Drive and goes into backups like the
+   preview song;
+3. deletes the file in `captures/`, kept or not.
 
 Rules:
 
@@ -259,7 +263,7 @@ Rules:
   a better one arrives, which can happen before the app ever ran. A
   `capture.ready` whose file is missing has been superseded: skip it.
 - `supersedes` names the capture this one replaces, if the plugin made one
-  before. If the app adopted that one, this one replaces it.
+  before. The app goes by `capturedAt`, not by this: the newest capture wins.
 - `trigger` is `"auto"` (a playback pass) or `"manual"` (the Record button).
 - The plugin never records loops being cycled or offline renders: the app's
   mixdown detection already covers bounces.

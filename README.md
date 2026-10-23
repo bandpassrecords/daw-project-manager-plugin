@@ -62,8 +62,9 @@ Pro Tools, which only loads AAX.
 
 Put it on your master bus:
 
-- **Pre-listen capture.** Each playback pass becomes the project's preview song
-  in the app, without bouncing.
+- **Pre-listen capture.** Each playback pass is recorded as the project's
+  latest capture in the app, ready to play beside its preview song, without
+  bouncing.
 - **To-dos and notes in the DAW.** Tick them off, add new ones, stamp one with
   the playhead time (`[01:42] vocal too loud`).
 - **Knows which project is open,** from the DAW's window title or the app's
