@@ -14,7 +14,7 @@
   "releases": [
     {
       "version": "0.1.0",
-      "date": "2026-10-18",
+      "date": "2026-10-25",
       "highlights": {
         "en": [
           "First release: a VST3 (and AU on macOS) plugin that pairs a DAW session with its project in DAW Project Manager.",
