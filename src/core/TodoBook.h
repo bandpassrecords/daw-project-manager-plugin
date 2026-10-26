@@ -28,11 +28,15 @@ std::vector<TodoView> buildTodoList (const IndexedProject* indexed,
                                      const std::vector<PendingTodoOp>& pending,
                                      const protocol::ProjectRef& project);
 
-/** Drops the delivered ops the index now reflects:
+/** Drops the delivered ops the app has dealt with:
+      - any op the index lists in `applied`: the app handled it, whether it
+        applied it or kept a newer change of its own;
       - an add, once its to-do is in the index;
       - a completion change, once the index (written after the change) agrees,
         or once the to-do is gone from a project the index still lists —
-        deleted in the app, which beats a tick made in the plugin.
+        deleted in the app, which beats a tick made in the plugin;
+      - any op an index written `unconfirmedChangeTimeout` after it still
+        doesn't confirm (sent by 0.1.0, under an id `applied` can't name).
     Ops not yet delivered are never dropped, whatever the index says.
 */
 void pruneAcknowledged (std::vector<PendingTodoOp>& pending, const ProjectIndex& index);
@@ -67,6 +71,12 @@ struct StampedText
 };
 
 StampedText splitTimeStamp (const juce::String& text);
+
+/** How long after a delivered change an index that neither shows it nor
+    lists it as applied stops it waiting. The app lists handled messages for
+    30 minutes; past this, it has had the message for longer than that.
+*/
+inline const juce::RelativeTime unconfirmedChangeTimeout = juce::RelativeTime::hours (1);
 
 /** Longest to-do text the plugin sends. */
 inline constexpr int maxTodoLength = 500;

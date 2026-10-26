@@ -278,9 +278,11 @@ int BridgeSession::deliver()
         if (op.delivered)
             continue;
 
+        // The op's own id is the message id, as for notes: the app lists it
+        // in the index's "applied" once handled, applied or not.
         const auto e = envelope (op.kind == PendingTodoOp::Kind::add ? protocol::type::todoAdd
                                                                       : protocol::type::todoSetCompleted,
-                                 op.project, op.at);
+                                 op.project, op.at, op.opId);
         const auto payload = op.kind == PendingTodoOp::Kind::add
                                  ? protocol::todoAddPayload (op.todoId, op.text, op.at)
                                  : protocol::todoSetCompletedPayload (op.todoId, op.completed, op.at);
