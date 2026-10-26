@@ -20,7 +20,7 @@ namespace
         }));
     }
 
-    DetectionContext titled (const char* host, const char* title)
+    DetectionContext titled (const juce::String& host, const juce::String& title)
     {
         DetectionContext c;
         c.hostName = host;
@@ -50,6 +50,33 @@ TEST_CASE ("The longer, more specific name wins over a name it contains", "[matc
 {
     const auto index = library();
     CHECK (bestId (index, titled ("Cubase", "Cubase Pro Project - Teardrop Remix v2")) == "cub2");
+}
+
+TEST_CASE ("A name that is only part of the title's project name is a suggestion, not a link", "[matcher]")
+{
+    // "Demo Remix" is a project the app hasn't scanned yet: "Demo" must not
+    // take its to-dos and work sessions.
+    const auto index = library();
+    const auto ranked = rankProjects (index, titled ("Steinberg Cubase 14", "Cubase Pro Project - Demo Remix"));
+    REQUIRE (ranked.size() == 1);
+    CHECK (ranked[0].project->id == "rpp");
+    CHECK (ranked[0].score < confidentScore);
+    CHECK (confidentMatch (ranked) == nullptr);
+
+    // A launch from the app still makes it confident.
+    auto launched = titled ("Steinberg Cubase 14", "Cubase Pro Project - Demo Remix");
+    launched.launch = LaunchHint { "rpp", "b", "D:\\Reaper\\Demo\\Demo.rpp", test::fixedTime (-60) };
+    CHECK (bestId (index, launched) == "rpp");
+}
+
+TEST_CASE ("The project's own part of the title links, however the DAW decorates it", "[matcher]")
+{
+    const auto index = library();
+    CHECK (bestId (index, titled ("Studio One", "Studio One - Song*")) == "s1");               // unsaved
+    CHECK (bestId (index, titled ("Pro Tools", "Edit: Song")) == "s1");
+    CHECK (bestId (index, titled ("Bitwig Studio", "Bitwig Studio | Song")) == "s1");
+    CHECK (bestId (index, titled ("Ableton Live 12", "Song (Song) - Ableton Live 12")) == "s1");
+    CHECK (bestId (index, titled ("Studio One", juce::String::fromUTF8 ("Studio One \xe2\x80\x93 Song"))) == "s1");
 }
 
 TEST_CASE ("A name only counts as a whole word", "[matcher]")

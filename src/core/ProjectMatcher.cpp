@@ -10,6 +10,7 @@ namespace
     constexpr int pathScore = 100;
     constexpr int fileNameScore = 95;
     constexpr int nameBaseScore = 60;     // + the name's length, up to 30
+    constexpr int partialNameScore = 40;  // + up to 19: a suggestion, never a link
     constexpr int freshLaunchScore = 65;  // the app opened it moments ago
     constexpr int staleLaunchScore = 40;  // earlier today: a suggestion only
     constexpr int launchBonus = 20;
@@ -26,6 +27,25 @@ namespace
     bool isWordChar (juce::juce_wchar c)
     {
         return juce::CharacterFunctions::isLetterOrDigit (c);
+    }
+
+    /** Whether `name` is a whole part of the title, between the separators
+        DAWs put around a project's name ("Cubase Pro Project - <name>",
+        "<name> [<path>] - REAPER", "Edit: <name>", an unsaved "<name>*"),
+        rather than a word inside a longer name.
+    */
+    bool isTitlePart (const juce::String& title, const juce::String& name)
+    {
+        auto t = title.replaceCharacter ((juce::juce_wchar) 0x2013, '-')     // en dash
+                      .replaceCharacter ((juce::juce_wchar) 0x2014, '-');    // em dash
+        for (auto* separator : { " - ", " | ", ": ", "[", "]", "(", ")" })
+            t = t.replace (separator, "\n");
+
+        const auto wanted = name.trim();
+        for (auto& part : juce::StringArray::fromLines (t))
+            if (part.trim().trimCharactersAtEnd ("*").trim().equalsIgnoreCase (wanted))
+                return true;
+        return false;
     }
 
     bool launchPointsAt (const LaunchHint& hint, const IndexedProject& p)
@@ -86,7 +106,16 @@ std::vector<MatchCandidate> rankProjects (const ProjectIndex& index, const Detec
             else if (fileName.contains (".") && containsAsWord (title, fileName))
                 c = { &p, fileNameScore, MatchReason::titleHasFileName };
             else if (stem.length() >= 2 && containsAsWord (title, stem))
-                c = { &p, nameBaseScore + juce::jmin (stem.length(), 30), MatchReason::titleHasName };
+            {
+                // Only the title's whole project name links. A word inside a
+                // longer one ("Demo" in "Demo Remix", a project the app hasn't
+                // scanned yet) is a suggestion: linking would hand that other
+                // project its to-dos and work sessions.
+                const auto score = isTitlePart (ctx.windowTitle, stem)
+                                       ? nameBaseScore + juce::jmin (stem.length(), 30)
+                                       : partialNameScore + juce::jmin (stem.length(), 19);
+                c = { &p, score, MatchReason::titleHasName };
+            }
         }
 
         // A launch hint ages: a plugin loaded minutes after the app opened
