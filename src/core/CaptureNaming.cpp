@@ -24,6 +24,15 @@ bool isPartialCapture (const juce::File& f)
     return f.getFileName().startsWithChar ('.') || f.hasFileExtension (".part");
 }
 
+int deleteStaleTakes (const juce::File& folder, juce::Time now, juce::RelativeTime maxAge)
+{
+    int deleted = 0;
+    for (const auto& f : folder.findChildFiles (juce::File::findFiles, false, ".take-*.part"))
+        if (f.getLastModificationTime() < now - maxAge && f.deleteFile())
+            ++deleted;
+    return deleted;
+}
+
 juce::String partialCaptureName (const juce::String& instanceId, int takeNumber)
 {
     return ".take-" + instanceId.removeCharacters ("-").substring (0, 12) + "-" + juce::String (takeNumber)

@@ -19,4 +19,13 @@ bool isPartialCapture (const juce::File& f);
 /** The name a take is written under while it is being recorded. */
 juce::String partialCaptureName (const juce::String& instanceId, int takeNumber);
 
+/** Deletes the takes in `folder` nobody has written to for `maxAge`: left
+    behind when a DAW crashed or was killed mid-take. A take still being
+    recorded (by this DAW or another sharing the folder) is written to all
+    the time, so it is never that old. Only takes: anything else is left
+    alone. Returns how many were deleted.
+*/
+int deleteStaleTakes (const juce::File& folder, juce::Time now,
+                      juce::RelativeTime maxAge = juce::RelativeTime::days (1));
+
 } // namespace dpm

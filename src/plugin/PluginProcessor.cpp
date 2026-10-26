@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 
 #include "Translations.h"
+#include "core/CaptureNaming.h"
 #include "ui/PluginEditor.h"
 
 namespace dpm
@@ -33,6 +34,10 @@ PluginProcessor::PluginProcessor()
 {
     installTranslations();
     applyCaptureSettings();
+
+    // Takes a crashed or killed DAW left half-written: nothing else ever
+    // removes them from the temp folder.
+    deleteStaleTakes (takeFolder(), juce::Time::getCurrentTime());
 }
 
 PluginProcessor::~PluginProcessor()
