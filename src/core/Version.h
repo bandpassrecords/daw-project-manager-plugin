@@ -16,8 +16,9 @@ bool isNewerVersion (const juce::String& remote, const juce::String& local);
 */
 inline constexpr const char* releasesUrlPrefix = "https://github.com/bandpassrecords/daw-project-manager-plugin/releases";
 
-/** Whether `url` is on the plugin's releases page: the page itself or
-    anything under it, never a page that merely starts with the same text.
+/** Whether `url` is the plugin's releases page, its latest release, or one
+    release's page (/releases/tag/<tag>). Nothing else: the plugin opens it
+    in the browser, so a link that resolves elsewhere ("../") is refused.
 */
 bool isReleasePageUrl (const juce::String& url);
 
