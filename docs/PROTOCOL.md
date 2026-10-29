@@ -314,8 +314,16 @@ DAW project) until the index shows it:
 
 | Change | Acknowledged when |
 |---|---|
+| any | its message `id` is in the index's `applied`, whatever the app made of it |
 | `todo.add` | the project's `todos` contain `todoId` |
 | `todo.setCompleted` | an index with `generatedAt` after the change shows that `completed`, or the to-do is no longer listed |
+| any | an index with `generatedAt` an hour or more after the change (for changes 0.1.0 sent under another `id`) |
+
+A to-do change's message `id` is the change's own id, kept with it in the
+DAW project, as a notes edit's is. Listing it in `applied` matters most when
+the app does *not* apply a change: it kept a newer change of its own, or the
+project is gone. Without it the plugin would show its change as waiting
+forever.
 
 So **after applying messages, rewrite `index.json` with a fresh
 `generatedAt`.** Until then the plugin shows those to-dos with a "waiting for

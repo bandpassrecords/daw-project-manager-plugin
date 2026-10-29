@@ -42,8 +42,19 @@ bool isNewerVersion (const juce::String& remote, const juce::String& local)
 
 bool isReleasePageUrl (const juce::String& url)
 {
+    // Exactly the releases page, its latest release, or one release's page:
+    // nothing a browser could resolve to another page ("../"), and no query.
     const juce::String prefix (releasesUrlPrefix);
-    return url == prefix || url.startsWith (prefix + "/");
+    if (url == prefix || url == prefix + "/" || url == prefix + "/latest")
+        return true;
+
+    const auto tagPrefix = prefix + "/tag/";
+    if (! url.startsWith (tagPrefix))
+        return false;
+
+    const auto tag = url.substring (tagPrefix.length());
+    return tag.isNotEmpty() && ! tag.contains ("..")
+           && tag.containsOnly ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_+");
 }
 
 } // namespace dpm

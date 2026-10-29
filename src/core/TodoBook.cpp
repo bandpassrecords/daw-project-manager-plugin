@@ -68,7 +68,17 @@ void pruneAcknowledged (std::vector<PendingTodoOp>& pending, const ProjectIndex&
 
         if (op.delivered)
         {
-            if (auto* project = index.find (op.project))
+            // Handled by the app, whatever came of it: it may have kept a
+            // newer change of its own, or the project may be gone. Waiting for
+            // the index to show this change would then wait forever.
+            if (index.applied.contains (op.opId))
+                acknowledged = true;
+            // Sent under another id (by 0.1.0), so `applied` can't name it:
+            // an index written this long after the change comes from an app
+            // that has long had it.
+            else if (index.generatedAt >= op.at + unconfirmedChangeTimeout)
+                acknowledged = true;
+            else if (auto* project = index.find (op.project))
             {
                 auto* todo = project->findTodo (op.todoId);
 

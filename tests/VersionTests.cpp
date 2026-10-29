@@ -89,6 +89,24 @@ TEST_CASE ("Only the plugin's own releases page counts", "[version]")
     CHECK_FALSE (isReleasePageUrl ("https://github.com/bandpassrecords/daw-project-manager/releases/tag/v2.10.0"));
 }
 
+TEST_CASE ("A release link can't climb out of the releases page", "[version]")
+{
+    const juce::String releases ("https://github.com/bandpassrecords/daw-project-manager-plugin/releases");
+    CHECK (isReleasePageUrl (releases + "/"));
+    CHECK (isReleasePageUrl (releases + "/latest"));
+    CHECK (isReleasePageUrl (releases + "/tag/v0.2.0"));
+    CHECK (isReleasePageUrl (releases + "/tag/v0.2.0-beta.1"));
+
+    // A browser resolves these to other GitHub pages.
+    CHECK_FALSE (isReleasePageUrl (releases + "/../../../someone/else"));
+    CHECK_FALSE (isReleasePageUrl (releases + "/tag/../../../someone/else"));
+    CHECK_FALSE (isReleasePageUrl (releases + "/tag/v0.2.0/../../../../someone/else"));
+    CHECK_FALSE (isReleasePageUrl (releases + "/tag/%2e%2e/%2e%2e/x"));
+    CHECK_FALSE (isReleasePageUrl (releases + "/tag/"));
+    CHECK_FALSE (isReleasePageUrl (releases + "/tag/v0.2.0?redirect=https://example.com"));
+    CHECK_FALSE (isReleasePageUrl (releases + "/download/v0.2.0/setup.exe"));
+}
+
 TEST_CASE ("No index, no update", "[version]")
 {
     test::TempDir tmp;

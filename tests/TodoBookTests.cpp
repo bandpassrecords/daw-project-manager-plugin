@@ -131,6 +131,64 @@ TEST_CASE ("Ops for a project missing from the index are kept", "[todos]")
     CHECK (pending.size() == 1);
 }
 
+TEST_CASE ("A tick the app handled but didn't apply is dropped once the app lists it", "[todos]")
+{
+    // Someone unticked it in the app after the plugin ticked it: the app
+    // keeps its own change, and lists the plugin's message as handled.
+    std::vector<PendingTodoOp> pending;
+    addSetCompletedOp (pending, song, "t1", true, test::fixedTime (10));
+    pending[0].delivered = true;
+
+    auto index = test::parseIndex (test::indexJson ({ { "p1", "a", "Song", "x", "", { { "t1", "Mix", false } } } },
+                                                    test::fixedTime (20)));
+    pruneAcknowledged (pending, index);
+    REQUIRE (pending.size() == 1);
+
+    index.applied.add (pending[0].opId);
+    pruneAcknowledged (pending, index);
+    CHECK (pending.empty());
+}
+
+TEST_CASE ("An add for a project the app no longer lists is dropped once the app lists it", "[todos]")
+{
+    std::vector<PendingTodoOp> pending { added ("t9", "Master", true) };
+    auto index = test::parseIndex (test::indexJson ({ { "zz", "a", "Elsewhere", "x" } }));
+    index.applied.add (pending[0].opId);
+
+    pruneAcknowledged (pending, index);
+    CHECK (pending.empty());
+}
+
+TEST_CASE ("Being listed as applied never drops an op that wasn't delivered", "[todos]")
+{
+    std::vector<PendingTodoOp> pending { added ("t9", "Master", false) };
+    auto index = test::parseIndex (test::indexJson ({ { "p1", "a", "Song", "x" } }));
+    index.applied.add (pending[0].opId);
+
+    pruneAcknowledged (pending, index);
+    CHECK (pending.size() == 1);
+}
+
+TEST_CASE ("A delivered change the app never listed is dropped an hour after it was made", "[todos]")
+{
+    // Sent by 0.1.0 under another message id, so `applied` can't name it: an
+    // index written an hour later comes from an app that has long had it.
+    std::vector<PendingTodoOp> pending;
+    addSetCompletedOp (pending, song, "t1", true, test::fixedTime (0));
+    pending[0].delivered = true;
+    const auto index = [] (int at)
+    {
+        return test::parseIndex (test::indexJson ({ { "p1", "a", "Song", "x", "", { { "t1", "Mix", false } } } },
+                                                  test::fixedTime (at)));
+    };
+
+    pruneAcknowledged (pending, index (59 * 60));
+    REQUIRE (pending.size() == 1);
+
+    pruneAcknowledged (pending, index (61 * 60));
+    CHECK (pending.empty());
+}
+
 TEST_CASE ("Ticking twice before delivery leaves one op, the latest", "[todos]")
 {
     std::vector<PendingTodoOp> pending;

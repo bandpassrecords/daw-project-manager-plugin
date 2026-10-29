@@ -47,7 +47,10 @@ void CaptureEngine::prepare (double newSampleRate, int numChannels)
     manualTakeActive.store (false);
     samplesRecorded.store (0);
 
-    startThread (juce::Thread::Priority::low);
+    // Normal, not low: on a busy machine a low-priority writer falls behind,
+    // the FIFO fills and the take is thrown away as incomplete. It only ever
+    // sleeps or writes a file, so it costs the audio thread nothing.
+    startThread (juce::Thread::Priority::normal);
 }
 
 void CaptureEngine::release()

@@ -37,3 +37,27 @@ TEST_CASE ("Takes being written are recognizable so the app skips them", "[namin
     CHECK (isPartialCapture (dir.getChildFile (".Song.flac.part")));
     CHECK_FALSE (isPartialCapture (dir.getChildFile ("Song_20261018-140233.flac")));
 }
+
+TEST_CASE ("Takes left behind by a crash are deleted once they are a day old", "[naming]")
+{
+    test::TempDir tmp;
+    const auto now = juce::Time::getCurrentTime();
+    auto takeFile = [&tmp] (const juce::String& name, juce::Time modified)
+    {
+        auto f = tmp.dir.getChildFile (name);
+        REQUIRE (f.replaceWithText ("audio"));
+        REQUIRE (f.setLastModificationTime (modified));
+        return f;
+    };
+
+    const auto crashed = takeFile (partialCaptureName ("a1b2c3", 1), now - juce::RelativeTime::days (2));
+    const auto recording = takeFile (partialCaptureName ("d4e5f6", 7), now - juce::RelativeTime::minutes (3));
+    const auto notATake = takeFile ("notes.txt", now - juce::RelativeTime::days (30));
+
+    CHECK (deleteStaleTakes (tmp.dir, now) == 1);
+    CHECK_FALSE (crashed.exists());
+    CHECK (recording.existsAsFile());   // another DAW may still be writing it
+    CHECK (notATake.existsAsFile());    // never anything but a take
+
+    CHECK (deleteStaleTakes (tmp.dir.getChildFile ("missing"), now) == 0);
+}

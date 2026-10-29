@@ -211,6 +211,34 @@ TEST_CASE ("To-dos: shown from the index, added and ticked in the plugin, delive
         CHECK_FALSE (t.pending);
 }
 
+TEST_CASE ("A to-do change goes out under its own id, and the app naming it as applied clears it", "[session]")
+{
+    Fixture f;
+    f.writeIndex (library ({ { "t1", "Fix the kick" } }));
+    f.session.refresh();
+    f.session.linkTo (*f.session.index()->find ("solo", "song"), true);
+
+    f.session.setTodoCompleted ("t1", true);
+    const auto opId = f.session.state().pendingTodos.at (0).opId;
+    f.session.deliver();
+
+    const auto messages = test::outboxMessages (f.bridge);
+    REQUIRE (messages.size() == 2);
+    CHECK (messages[1]["id"].toString() == opId);
+
+    // The app kept its own, newer state (unticked) and says it handled the tick.
+    f.clock = f.clock + juce::RelativeTime::seconds (5);
+    auto index = juce::JSON::parse (library ({ { "t1", "Fix the kick", false } }, f.clock));
+    index.getDynamicObject()->setProperty ("applied", juce::Array<juce::var> { opId });
+    f.writeIndex (juce::JSON::toString (index));
+    f.session.refresh();
+
+    CHECK (f.session.state().pendingTodos.empty());
+    REQUIRE (f.session.todos().size() == 1);
+    CHECK_FALSE (f.session.todos()[0].completed);
+    CHECK_FALSE (f.session.todos()[0].pending);
+}
+
 TEST_CASE ("The playhead stamp is added only when switched on", "[session]")
 {
     Fixture f;
