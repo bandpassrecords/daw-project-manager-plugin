@@ -13,6 +13,18 @@
   ],
   "releases": [
     {
+      "version": "0.1.1",
+      "date": "2026-10-30",
+      "highlights": {
+        "en": [
+          "To-dos you change in the plugin no longer stay marked as waiting when DAW Project Manager keeps a newer change of its own, or when the project was archived or deleted.",
+          "Linking is more careful: a project whose name only appears inside a longer name in the DAW's title (\"Demo\" in \"Demo Remix\") is suggested instead of linked.",
+          "Captures are less likely to be lost on a busy computer, and half-recorded takes left behind by a crash are cleaned up after a day.",
+          "The \"Update available\" link only ever opens the plugin's own release page."
+        ]
+      }
+    },
+    {
       "version": "0.1.0",
       "date": "2026-10-25",
       "highlights": {
